@@ -15,15 +15,15 @@ public class EmployeeRelativesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? uid)
+    public async Task<IActionResult> GetAll([FromQuery] int? eid)
     {
         var query = _context.Employee_Relatives
             .Include(e => e.Employee)
             .AsQueryable();
 
-        if (uid.HasValue)
+        if (eid.HasValue)
         {
-            query = query.Where(e => e.Eid == uid.Value);
+            query = query.Where(e => e.Eid == eid.Value);
         }
 
         var relatives = await query.ToListAsync();

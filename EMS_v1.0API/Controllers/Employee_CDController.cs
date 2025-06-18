@@ -60,10 +60,10 @@ public class EmployeeCDController : ControllerBase
         }
     }
 
-    [HttpPut("{uid}")]
-    public async Task<IActionResult> Update(int uid, [FromBody] Employee_CD employeeCD)
+    [HttpPut("{eid}")]
+    public async Task<IActionResult> Update(int eid, [FromBody] Employee_CD employeeCD)
     {
-        if (uid != employeeCD.Eid)
+        if (eid != employeeCD.Eid)
         {
             return BadRequest(new { Success = false, Message = "ID không khớp" });
         }
@@ -82,7 +82,7 @@ public class EmployeeCDController : ControllerBase
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!await _context.Employee_CDs.AnyAsync(e => e.Eid == uid))
+            if (!await _context.Employee_CDs.AnyAsync(e => e.Eid == eid))
             {
                 return NotFound(new { Success = false, Message = "Không tìm thấy thông tin CCCD" });
             }
@@ -94,11 +94,11 @@ public class EmployeeCDController : ControllerBase
         }
     }
 
-    [HttpDelete("{uid}")]
+    [HttpDelete("{eid}")]
     [SessionAuthorize(RequiredRole = "Admin")]
-    public async Task<IActionResult> Delete(int uid)
+    public async Task<IActionResult> Delete(int eid)
     {
-        var employeeCD = await _context.Employee_CDs.FindAsync(uid);
+        var employeeCD = await _context.Employee_CDs.FindAsync(eid);
         if (employeeCD == null)
         {
             return NotFound(new { Success = false, Message = "Không tìm thấy thông tin CCCD" });

@@ -25,21 +25,21 @@ public class EmployeeSalaryController : ControllerBase
         return Ok(new { Success = true, Data = salaries });
     }
 
-    [HttpGet("{uid}")]
-    public async Task<IActionResult> GetByUid(int uid)
+    [HttpGet("{eid}")]
+    public async Task<IActionResult> GetByUid(int eid)
     {
         // Check if user can access this salary info
         var userIdStr = HttpContext.Session.GetString("UserId");
         var userRole = HttpContext.Session.GetString("UserRole");
 
-        if (userRole != "Admin" && userIdStr != uid.ToString())
+        if (userRole != "Admin" && userIdStr != eid.ToString())
         {
             return Forbid();
         }
 
         var salary = await _context.Employee_Salaries
             .Include(e => e.Employee)
-            .FirstOrDefaultAsync(e => e.Eid == uid);
+            .FirstOrDefaultAsync(e => e.Eid == eid);
 
         if (salary == null)
         {
@@ -63,7 +63,7 @@ public class EmployeeSalaryController : ControllerBase
             _context.Employee_Salaries.Add(salary);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetByUid), new { uid = salary.Eid },
+            return CreatedAtAction(nameof(GetByUid), new { eid = salary.Eid },
                 new { Success = true, Data = salary, Message = "Tạo thông tin lương thành công" });
         }
         catch (Exception ex)
@@ -72,11 +72,11 @@ public class EmployeeSalaryController : ControllerBase
         }
     }
 
-    [HttpPut("{uid}")]
+    [HttpPut("{eid}")]
     [SessionAuthorize(RequiredRole = "Admin")]
-    public async Task<IActionResult> Update(int uid, [FromBody] Employee_Salary salary)
+    public async Task<IActionResult> Update(int eid, [FromBody] Employee_Salary salary)
     {
-        if (uid != salary.Eid)
+        if (eid != salary.Eid)
         {
             return BadRequest(new { Success = false, Message = "ID không khớp" });
         }
@@ -95,7 +95,7 @@ public class EmployeeSalaryController : ControllerBase
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!await _context.Employee_Salaries.AnyAsync(e => e.Eid == uid))
+            if (!await _context.Employee_Salaries.AnyAsync(e => e.Eid == eid))
             {
                 return NotFound(new { Success = false, Message = "Không tìm thấy thông tin lương" });
             }

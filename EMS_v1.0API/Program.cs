@@ -71,7 +71,7 @@ app.MapControllers();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.EnsureDeleted(); // Drops the database if it exists
+    //context.Database.EnsureDeleted(); // Drops the database if it exists
     context.Database.EnsureCreated(); // Creates the database with the latest schema
 }
 

@@ -24,12 +24,12 @@ public class EmployeeASController : ControllerBase
         return Ok(new { Success = true, Data = employeeASs });
     }
 
-    [HttpGet("{uid}")]
-    public async Task<IActionResult> GetByUid(int uid)
+    [HttpGet("{eid}")]
+    public async Task<IActionResult> GetByEid(int eid)
     {
         var employeeAS = await _context.Employee_ASs
             .Include(e => e.Employee)
-            .FirstOrDefaultAsync(e => e.Eid == uid);
+            .FirstOrDefaultAsync(e => e.Eid == eid);
 
         if (employeeAS == null)
         {
@@ -52,7 +52,7 @@ public class EmployeeASController : ControllerBase
             _context.Employee_ASs.Add(employeeAS);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetByUid), new { uid = employeeAS.Eid },
+            return CreatedAtAction(nameof(GetByEid), new { uid = employeeAS.Eid },
                 new { Success = true, Data = employeeAS, Message = "Tạo thông tin học hàm học vị thành công" });
         }
         catch (Exception ex)
@@ -61,10 +61,10 @@ public class EmployeeASController : ControllerBase
         }
     }
 
-    [HttpPut("{uid}")]
-    public async Task<IActionResult> Update(int uid, [FromBody] Employee_AS employeeAS)
+    [HttpPut("{eid}")]
+    public async Task<IActionResult> Update(int eid, [FromBody] Employee_AS employeeAS)
     {
-        if (uid != employeeAS.Eid)
+        if (eid != employeeAS.Eid)
         {
             return BadRequest(new { Success = false, Message = "ID không khớp" });
         }
@@ -83,7 +83,7 @@ public class EmployeeASController : ControllerBase
         }
         catch (DbUpdateConcurrencyException)
         {
-            if (!await _context.Employee_ASs.AnyAsync(e => e.Eid == uid))
+            if (!await _context.Employee_ASs.AnyAsync(e => e.Eid == eid))
             {
                 return NotFound(new { Success = false, Message = "Không tìm thấy thông tin học hàm học vị" });
             }
@@ -95,11 +95,11 @@ public class EmployeeASController : ControllerBase
         }
     }
 
-    [HttpDelete("{uid}")]
+    [HttpDelete("{eid}")]
     [SessionAuthorize(RequiredRole = "Admin")]
-    public async Task<IActionResult> Delete(int uid)
+    public async Task<IActionResult> Delete(int eid)
     {
-        var employeeAS = await _context.Employee_ASs.FindAsync(uid);
+        var employeeAS = await _context.Employee_ASs.FindAsync(eid);
         if (employeeAS == null)
         {
             return NotFound(new { Success = false, Message = "Không tìm thấy thông tin học hàm học vị" });

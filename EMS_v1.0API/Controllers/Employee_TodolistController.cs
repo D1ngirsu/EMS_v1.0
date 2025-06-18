@@ -15,15 +15,15 @@ public class EmployeeTodolistController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? uid, [FromQuery] byte? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll([FromQuery] int? eid, [FromQuery] byte? status, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var query = _context.Employee_Todolists
             .Include(e => e.Employee)
             .AsQueryable();
 
-        if (uid.HasValue)
+        if (eid.HasValue)
         {
-            query = query.Where(e => e.Eid == uid.Value);
+            query = query.Where(e => e.Eid == eid.Value);
         }
 
         if (status.HasValue)

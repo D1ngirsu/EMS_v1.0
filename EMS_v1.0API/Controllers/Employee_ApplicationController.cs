@@ -15,15 +15,15 @@ public class EmployeeApplicationController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? uid, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll([FromQuery] int? eid, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var query = _context.Employee_Applications
             .Include(e => e.Employee)
             .AsQueryable();
 
-        if (uid.HasValue)
+        if (eid.HasValue)
         {
-            query = query.Where(e => e.Eid == uid.Value);
+            query = query.Where(e => e.Eid == eid.Value);
         }
 
         var totalCount = await query.CountAsync();
@@ -57,6 +57,30 @@ public class EmployeeApplicationController : ControllerBase
         }
 
         return Ok(new { Success = true, Data = application });
+    }
+
+    [HttpGet("employee/{eid}")]
+    public async Task<IActionResult> GetByEmployeeId(int eid, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    {
+        var query = _context.Employee_Applications
+            .Where(e => e.Eid == eid)
+            .Include(e => e.Employee)
+            .OrderByDescending(e => e.Date)
+            .AsQueryable();
+        var totalCount = await query.CountAsync();
+        var applications = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+        return Ok(new
+        {
+            Success = true,
+            Data = applications,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+        });
     }
 
     [HttpPost]
