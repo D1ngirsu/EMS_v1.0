@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 public class Employee
 {
     [Key]
-    public int Eid { get; set; } // Changed from Uid to Eid
+    public int Eid { get; set; }
 
     [Required]
     [StringLength(100)]
