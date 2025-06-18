@@ -45,6 +45,20 @@ public class EmployeeRelativesController : ControllerBase
         return Ok(new { Success = true, Data = relative });
     }
 
+    [HttpGet("by-employee/{eid}")]
+    public async Task<IActionResult> GetByEmployeeId(int eid)
+    {
+        var relatives = await _context.Employee_Relatives
+            .Where(e => e.Eid == eid)
+            .Include(e => e.Employee)
+            .ToListAsync();
+        if (relatives == null || !relatives.Any())
+        {
+            return NotFound(new { Success = false, Message = "Không tìm thấy thông tin người thân cho nhân viên này" });
+        }
+        return Ok(new { Success = true, Data = relatives });
+    }
+
     [HttpPost]
     public async Task<IActionResult> Create([FromBody] Employee_Relatives relative)
     {

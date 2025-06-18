@@ -23,12 +23,12 @@ public class EmployeeCDController : ControllerBase
         return Ok(new { Success = true, Data = employeeCDs });
     }
 
-    [HttpGet("{uid}")]
-    public async Task<IActionResult> GetByUid(int uid)
+    [HttpGet("{eid}")]
+    public async Task<IActionResult> GetByEid(int eid)
     {
         var employeeCD = await _context.Employee_CDs
             .Include(e => e.Employee)
-            .FirstOrDefaultAsync(e => e.Eid == uid);
+            .FirstOrDefaultAsync(e => e.Eid == eid);
 
         if (employeeCD == null)
         {
@@ -51,7 +51,7 @@ public class EmployeeCDController : ControllerBase
             _context.Employee_CDs.Add(employeeCD);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetByUid), new { uid = employeeCD.Eid },
+            return CreatedAtAction(nameof(GetByEid), new { uid = employeeCD.Eid },
                 new { Success = true, Data = employeeCD, Message = "Tạo thông tin CCCD thành công" });
         }
         catch (Exception ex)
