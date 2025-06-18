@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 public class Employee
 {
     [Key]
-    public int Eid { get; set; } // Changed from Uid to Eid
+    public int Eid { get; set; }
 
     [Required]
     [StringLength(100)]
@@ -58,4 +58,5 @@ public class Employee
     public ICollection<Employee_Application>? Applications { get; set; } // Tùy chọn
     public ICollection<Employee_Relatives>? Relatives { get; set; } // Tùy chọn
     public ICollection<Employee_Todolist>? TodoList { get; set; } // Tùy chọn
+    public Employee_CL? EmployeeCL { get; set; } //Optional
 }

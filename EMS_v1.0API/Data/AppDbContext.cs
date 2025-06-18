@@ -10,6 +10,7 @@ public class AppDbContext : DbContext
     public DbSet<Employee> Employees { get; set; }
     public DbSet<Employee_CD> Employee_CDs { get; set; }
     public DbSet<Employee_AS> Employee_ASs { get; set; }
+    public DbSet<Employee_CL> Employee_CLs { get; set; } // Thêm DbSet cho Employee_CL
     public DbSet<Employee_Application> Employee_Applications { get; set; }
     public DbSet<Employee_Relatives> Employee_Relatives { get; set; }
     public DbSet<Employee_Todolist> Employee_Todolists { get; set; }
@@ -17,6 +18,7 @@ public class AppDbContext : DbContext
     public DbSet<Employee_Insurance> Employee_Insurances { get; set; }
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         // User configuration
@@ -81,6 +83,11 @@ public class AppDbContext : DbContext
             .ToTable(t => t.HasCheckConstraint("CK_Employee_Insurance_ContributePercent",
                 "[ContributePercent] BETWEEN 0 AND 100"));
 
+        // Employee_CL check constraint - Thêm constraint cho Status
+        modelBuilder.Entity<Employee_CL>()
+            .ToTable(t => t.HasCheckConstraint("CK_Employee_CL_Status",
+                "[Status] IN (N'Hiệu lực', N'Không Hiệu lực')"));
+
         // Relationships
         // Làm mối quan hệ với User thành tùy chọn
         modelBuilder.Entity<User>()
@@ -118,6 +125,13 @@ public class AppDbContext : DbContext
             .HasOne(e => e.Employee)
             .WithOne(e => e.EmployeeAS)
             .HasForeignKey<Employee_AS>(e => e.Eid)
+            .IsRequired(false);
+
+        // Employee_CL One-to-One relationship - Thêm mối quan hệ 1-1 với Employee
+        modelBuilder.Entity<Employee_CL>()
+            .HasOne(e => e.Employee)
+            .WithOne(e => e.EmployeeCL)
+            .HasForeignKey<Employee_CL>(e => e.Eid)
             .IsRequired(false);
 
         modelBuilder.Entity<Employee_Salary>()
