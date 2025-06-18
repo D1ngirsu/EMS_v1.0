@@ -39,6 +39,16 @@ public class AuthController : ControllerBase
             userRole = "Admin";
         else if (user.Employee?.Position?.PositionName == "Trưởng Phòng")
             userRole = "Manager";
+        else if (user.Employee?.Position?.PositionName == "Trưởng nhóm")
+            userRole = "TeamLeader";
+        else if (user.Employee?.Position?.PositionName == "Cán bộ nhân sự")
+            userRole = "HR";
+        else if (user.Employee?.Position?.PositionName == "Cán bộ lương")
+            userRole = "PayrollOfficer";
+        else if (user.Employee?.Position?.PositionName == "Cán bộ bảo hiểm")
+            userRole = "InsuranceOfficer";
+        else if (user.Employee?.Position?.PositionName == "Nhân viên")
+            userRole = "Staff";
 
         // Store user info in session
         HttpContext.Session.SetString("UserId", user.Uid.ToString());
