@@ -5,11 +5,14 @@ using Microsoft.EntityFrameworkCore;
 public class Employee_Insurance
 {
     [Key]
-    public int Eid { get; set; } // Changed from Uid to Eid
+    public int Iid { get; set; }
+
+    [Required]
+    public int Eid { get; set; }
 
     [Required]
     [StringLength(500)]
-    public string InsuranceContent { get; set; }
+    public string? InsuranceContent { get; set; }
 
     [Required]
     public DateTime FromDate { get; set; }
@@ -23,5 +26,5 @@ public class Employee_Insurance
 
     // Navigation property
     [ForeignKey("Eid")]
-    public Employee Employee { get; set; }
+    public Employee? Employee { get; set; }
 }

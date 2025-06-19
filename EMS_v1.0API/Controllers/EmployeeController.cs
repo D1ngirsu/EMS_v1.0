@@ -1,7 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using BCrypt.Net; 
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
-using BCrypt.Net; 
 
 [ApiController]
 [Route("api/[controller]")]
@@ -16,7 +16,7 @@ public class EmployeeController : ControllerBase
     }
 
     [HttpPost]
-    //[SessionAuthorize(RequiredRole = "Admin")]
+    [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
     public async Task<IActionResult> CreateEmployee([FromBody] Employee employee)
     {
         if (!ModelState.IsValid)
@@ -50,13 +50,34 @@ public class EmployeeController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetEmployees([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetEmployees(
+    [FromQuery] int page = 1,
+    [FromQuery] int pageSize = 10,
+    [FromQuery] string? name = null,
+    [FromQuery] int? eid = null,
+    [FromQuery] int? unitId = null)
     {
         var query = _context.Employees
             .Include(e => e.OrganizationUnit)
-                .ThenInclude(o => o.Parent) // Bao gồm phòng ban cha
+                .ThenInclude(o => o.Parent)
             .Include(e => e.Position)
             .AsQueryable();
+
+        // Áp dụng bộ lọc tìm kiếm
+        if (!string.IsNullOrEmpty(name))
+        {
+            query = query.Where(e => e.Name.Contains(name));
+        }
+
+        if (eid.HasValue)
+        {
+            query = query.Where(e => e.Eid == eid.Value);
+        }
+
+        if (unitId.HasValue)
+        {
+            query = query.Where(e => e.UnitId == unitId.Value);
+        }
 
         var totalCount = await query.CountAsync();
         var employees = await query
@@ -158,7 +179,7 @@ public class EmployeeController : ControllerBase
     }
 
     [HttpPut("{eid}")]
-    [SessionAuthorize(RequiredRole = "Admin")]
+    [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
     public async Task<IActionResult> UpdateEmployee(int eid, [FromBody] Employee employee)
     {
         if (eid != employee.Eid)
@@ -193,7 +214,7 @@ public class EmployeeController : ControllerBase
     }
 
     [HttpDelete("{eid}")]
-    //[SessionAuthorize(RequiredRole = "Admin")]
+    [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
     public async Task<IActionResult> DeleteEmployee(int eid)
     {
         var employee = await _context.Employees.FindAsync(eid);

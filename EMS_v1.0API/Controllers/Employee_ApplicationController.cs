@@ -84,6 +84,7 @@ public class EmployeeApplicationController : ControllerBase
     }
 
     [HttpPost]
+    [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
     public async Task<IActionResult> Create([FromBody] Employee_Application application)
     {
         if (!ModelState.IsValid)
@@ -106,6 +107,7 @@ public class EmployeeApplicationController : ControllerBase
     }
 
     [HttpPut("{appId}")]
+    [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
     public async Task<IActionResult> Update(int appId, [FromBody] Employee_Application application)
     {
         if (appId != application.AppId)
@@ -140,7 +142,7 @@ public class EmployeeApplicationController : ControllerBase
     }
 
     [HttpDelete("{appId}")]
-    [SessionAuthorize(RequiredRole = "Admin")]
+    [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
     public async Task<IActionResult> Delete(int appId)
     {
         var application = await _context.Employee_Applications.FindAsync(appId);

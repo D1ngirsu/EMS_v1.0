@@ -15,7 +15,7 @@ public class EmployeeSalaryController : ControllerBase
     }
 
     [HttpGet]
-    [SessionAuthorize(RequiredRole = "Admin")]
+    [SessionAuthorize(RequiredRole = new[] { "PayrollOfficer"})]
     public async Task<IActionResult> GetAll()
     {
         var salaries = await _context.Employee_Salaries
@@ -26,7 +26,8 @@ public class EmployeeSalaryController : ControllerBase
     }
 
     [HttpGet("{eid}")]
-    public async Task<IActionResult> GetByUid(int eid)
+    [SessionAuthorize(RequiredRole = new[] { "PayrollOfficer" })]
+    public async Task<IActionResult> GetByEid(int eid)
     {
         // Check if user can access this salary info
         var userIdStr = HttpContext.Session.GetString("UserId");
@@ -50,7 +51,7 @@ public class EmployeeSalaryController : ControllerBase
     }
 
     [HttpPost]
-    [SessionAuthorize(RequiredRole = "Admin")]
+    [SessionAuthorize(RequiredRole = new[] { "PayrollOfficer" })]
     public async Task<IActionResult> Create([FromBody] Employee_Salary salary)
     {
         if (!ModelState.IsValid)
@@ -63,7 +64,7 @@ public class EmployeeSalaryController : ControllerBase
             _context.Employee_Salaries.Add(salary);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetByUid), new { eid = salary.Eid },
+            return CreatedAtAction(nameof(GetByEid), new { eid = salary.Eid },
                 new { Success = true, Data = salary, Message = "Tạo thông tin lương thành công" });
         }
         catch (Exception ex)
@@ -73,7 +74,7 @@ public class EmployeeSalaryController : ControllerBase
     }
 
     [HttpPut("{eid}")]
-    [SessionAuthorize(RequiredRole = "Admin")]
+    [SessionAuthorize(RequiredRole = new[] { "PayrollOfficer" })]
     public async Task<IActionResult> Update(int eid, [FromBody] Employee_Salary salary)
     {
         if (eid != salary.Eid)

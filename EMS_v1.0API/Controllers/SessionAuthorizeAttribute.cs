@@ -1,9 +1,10 @@
 ﻿using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc;
+using System.Linq;
 
 public class SessionAuthorizeAttribute : Attribute, IAuthorizationFilter
 {
-    public string RequiredRole { get; set; }
+    public string[] RequiredRole { get; set; }
 
     public void OnAuthorization(AuthorizationFilterContext context)
     {
@@ -19,11 +20,11 @@ public class SessionAuthorizeAttribute : Attribute, IAuthorizationFilter
             return;
         }
 
-        // Check role if specified
-        if (!string.IsNullOrEmpty(RequiredRole))
+        // Check roles if specified
+        if (RequiredRole != null && RequiredRole.Length > 0)
         {
             var userRole = context.HttpContext.Session.GetString("UserRole");
-            if (userRole != RequiredRole && userRole != "Admin")
+            if (string.IsNullOrEmpty(userRole) || (!RequiredRole.Contains(userRole) && userRole != "Admin"))
             {
                 context.Result = new ForbidResult();
                 return;
