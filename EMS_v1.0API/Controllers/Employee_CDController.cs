@@ -39,7 +39,7 @@ public class EmployeeCDController : ControllerBase
     }
 
     [HttpPost]
-    [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
+    [SessionAuthorize(RequiredRole = new[] { "HR" })]
     public async Task<IActionResult> Create([FromBody] Employee_CD employeeCD)
     {
         if (!ModelState.IsValid)
@@ -96,7 +96,7 @@ public class EmployeeCDController : ControllerBase
     }
 
     [HttpDelete("{eid}")]
-    [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
+    [SessionAuthorize(RequiredRole = new[] { "HR" })]
     public async Task<IActionResult> Delete(int eid)
     {
         var employeeCD = await _context.Employee_CDs.FindAsync(eid);

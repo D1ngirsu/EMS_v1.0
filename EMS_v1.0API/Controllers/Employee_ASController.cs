@@ -40,7 +40,7 @@ public class EmployeeASController : ControllerBase
     }
 
     [HttpPost]
-    [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
+    [SessionAuthorize(RequiredRole = new[] { "HR" })]
     public async Task<IActionResult> Create([FromBody] Employee_AS employeeAS)
     {
         if (!ModelState.IsValid)
@@ -63,7 +63,7 @@ public class EmployeeASController : ControllerBase
     }
 
     [HttpPut("{eid}")]
-    [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
+    [SessionAuthorize(RequiredRole = new[] { "HR" })]
     public async Task<IActionResult> Update(int eid, [FromBody] Employee_AS employeeAS)
     {
         if (eid != employeeAS.Eid)
@@ -98,7 +98,7 @@ public class EmployeeASController : ControllerBase
     }
 
     [HttpDelete("{eid}")]
-    [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
+    [SessionAuthorize(RequiredRole = new[] { "HR" })]
     public async Task<IActionResult> Delete(int eid)
     {
         var employeeAS = await _context.Employee_ASs.FindAsync(eid);
