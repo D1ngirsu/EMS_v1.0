@@ -309,7 +309,7 @@ public class EmployeeTodolistController : ControllerBase
     }
 
     [HttpDelete("{tid}")]
-    [SessionAuthorize(RequiredRole = "Admin")]
+    [SessionAuthorize(RequiredRole = new[] { "HR" } )]
     public async Task<IActionResult> Delete(int tid)
     {
         var todo = await _context.Employee_Todolists.FindAsync(tid);

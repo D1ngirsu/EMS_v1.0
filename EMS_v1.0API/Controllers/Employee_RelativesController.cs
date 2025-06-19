@@ -116,7 +116,7 @@ public class EmployeeRelativesController : ControllerBase
     }
 
     [HttpDelete("{relId}")]
-    [SessionAuthorize(RequiredRole = "Admin")]
+    [SessionAuthorize(RequiredRole = new[] { "HR" } )]
     public async Task<IActionResult> Delete(int relId)
     {
         var relative = await _context.Employee_Relatives.FindAsync(relId);
