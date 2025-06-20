@@ -25,9 +25,9 @@ public class EmployeeASService : IDisposable
         };
     }
 
-    public async Task<EmployeeASListResponse> GetAllAsync()
+    public async Task<EmployeeASListResponse> GetAllAsync(int page = 1, int pageSize = 10)
     {
-        var response = await _client.GetAsync("api/employee-as");
+        var response = await _client.GetAsync($"api/employee-as?page={page}&pageSize={pageSize}");
         var responseJson = await response.Content.ReadAsStringAsync();
 
         return JsonSerializer.Deserialize<EmployeeASListResponse>(responseJson, new JsonSerializerOptions
@@ -104,6 +104,10 @@ public class EmployeeASListResponse
 {
     public bool Success { get; set; }
     public List<EmployeeASDto> Data { get; set; }
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages { get; set; }
 }
 
 public class EmployeeASDto

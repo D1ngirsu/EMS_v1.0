@@ -16,7 +16,12 @@ public class EmployeeInsuranceController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetInsurances([FromQuery] string? name, [FromQuery] int? eid, [FromQuery] int? iid)
+    public async Task<IActionResult> GetInsurances(
+        [FromQuery] string? name = null,
+        [FromQuery] int? eid = null,
+        [FromQuery] int? iid = null,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10)
     {
         var query = _context.Employee_Insurances
             .Include(e => e.Employee)
@@ -35,14 +40,26 @@ public class EmployeeInsuranceController : ControllerBase
             query = query.Where(e => e.Employee != null && e.Employee.Name.Contains(name));
         }
 
-        var employeeInsurances = await query.ToListAsync();
+        var totalCount = await query.CountAsync();
+        var employeeInsurances = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
 
         if (employeeInsurances == null || !employeeInsurances.Any())
         {
             return NotFound(new { Success = false, Message = "Không tìm thấy thông tin bảo hiểm" });
         }
 
-        return Ok(new { Success = true, Data = employeeInsurances });
+        return Ok(new
+        {
+            Success = true,
+            Data = employeeInsurances,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+        });
     }
 
     [HttpGet("{iid}")]
@@ -61,11 +78,17 @@ public class EmployeeInsuranceController : ControllerBase
     }
 
     [HttpGet("eid/{eid}")]
-    public async Task<IActionResult> GetByEid(int eid)
+    public async Task<IActionResult> GetByEid(int eid, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var employeeInsurances = await _context.Employee_Insurances
+        var query = _context.Employee_Insurances
             .Include(e => e.Employee)
             .Where(e => e.Eid == eid)
+            .AsQueryable();
+
+        var totalCount = await query.CountAsync();
+        var employeeInsurances = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         if (employeeInsurances == null || !employeeInsurances.Any())
@@ -73,7 +96,15 @@ public class EmployeeInsuranceController : ControllerBase
             return NotFound(new { Success = false, Message = "Không tìm thấy thông tin bảo hiểm cho nhân viên này" });
         }
 
-        return Ok(new { Success = true, Data = employeeInsurances });
+        return Ok(new
+        {
+            Success = true,
+            Data = employeeInsurances,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+        });
     }
 
     [HttpPost]

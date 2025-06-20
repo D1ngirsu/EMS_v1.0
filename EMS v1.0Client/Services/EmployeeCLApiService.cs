@@ -25,9 +25,9 @@ public class EmployeeCLService : IDisposable
         };
     }
 
-    public async Task<EmployeeCLListResponse> GetAllAsync()
+    public async Task<EmployeeCLListResponse> GetAllAsync(int page = 1, int pageSize = 10)
     {
-        var response = await _client.GetAsync("api/employee-cl");
+        var response = await _client.GetAsync($"api/employee-cl?page={page}&pageSize={pageSize}");
         var responseJson = await response.Content.ReadAsStringAsync();
 
         return JsonSerializer.Deserialize<EmployeeCLListResponse>(responseJson, new JsonSerializerOptions
@@ -47,9 +47,9 @@ public class EmployeeCLService : IDisposable
         });
     }
 
-    public async Task<EmployeeCLListResponse> GetByEidAsync(int eid)
+    public async Task<EmployeeCLListResponse> GetByEidAsync(int eid, int page = 1, int pageSize = 10)
     {
-        var response = await _client.GetAsync($"api/employee-cl/eid/{eid}");
+        var response = await _client.GetAsync($"api/employee-cl/eid/{eid}?page={page}&pageSize={pageSize}");
         var responseJson = await response.Content.ReadAsStringAsync();
 
         return JsonSerializer.Deserialize<EmployeeCLListResponse>(responseJson, new JsonSerializerOptions
@@ -115,7 +115,12 @@ public class EmployeeCLListResponse
 {
     public bool Success { get; set; }
     public List<EmployeeCLDto> Data { get; set; }
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages { get; set; }
 }
+
 public class EmployeeCLDto
 {
     public int Cid { get; set; }

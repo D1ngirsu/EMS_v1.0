@@ -25,10 +25,15 @@ public class EmployeeRelativesService : IDisposable
         };
     }
 
-    public async Task<EmployeeRelativesListResponse> GetAllAsync(int? eid = null)
+    public async Task<EmployeeRelativesListResponse> GetAllAsync(int? eid = null, int page = 1, int pageSize = 10)
     {
-        var queryString = eid.HasValue ? $"?eid={eid.Value}" : "";
-        var response = await _client.GetAsync($"api/employee-relatives{queryString}");
+        var queryParams = new List<string>();
+        if (eid.HasValue) queryParams.Add($"eid={eid.Value}");
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
+
+        var queryString = string.Join("&", queryParams);
+        var response = await _client.GetAsync($"api/employee-relatives{(queryString.Length > 0 ? $"?{queryString}" : "")}");
         var responseJson = await response.Content.ReadAsStringAsync();
 
         return JsonSerializer.Deserialize<EmployeeRelativesListResponse>(responseJson, new JsonSerializerOptions
@@ -48,9 +53,9 @@ public class EmployeeRelativesService : IDisposable
         });
     }
 
-    public async Task<EmployeeRelativesListResponse> GetByEmployeeIdAsync(int eid)
+    public async Task<EmployeeRelativesListResponse> GetByEmployeeIdAsync(int eid, int page = 1, int pageSize = 10)
     {
-        var response = await _client.GetAsync($"api/employee-relatives/by-employee/{eid}");
+        var response = await _client.GetAsync($"api/employee-relatives/by-employee/{eid}?page={page}&pageSize={pageSize}");
         var responseJson = await response.Content.ReadAsStringAsync();
 
         return JsonSerializer.Deserialize<EmployeeRelativesListResponse>(responseJson, new JsonSerializerOptions
@@ -116,6 +121,10 @@ public class EmployeeRelativesListResponse
 {
     public bool Success { get; set; }
     public List<EmployeeRelativesDto> Data { get; set; }
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages { get; set; }
 }
 
 public class EmployeeRelativesDto

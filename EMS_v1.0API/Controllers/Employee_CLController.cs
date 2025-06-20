@@ -15,13 +15,27 @@ public class EmployeeCLController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var employeeCLs = await _context.Employee_CLs
+        var query = _context.Employee_CLs
             .Include(e => e.Employee)
+            .AsQueryable();
+
+        var totalCount = await query.CountAsync();
+        var employeeCLs = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        return Ok(new { Success = true, Data = employeeCLs });
+        return Ok(new
+        {
+            Success = true,
+            Data = employeeCLs,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+        });
     }
 
     [HttpGet("{cid}")]
@@ -40,11 +54,17 @@ public class EmployeeCLController : ControllerBase
     }
 
     [HttpGet("eid/{eid}")]
-    public async Task<IActionResult> GetByEid(int eid)
+    public async Task<IActionResult> GetByEid(int eid, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var employeeCLs = await _context.Employee_CLs
+        var query = _context.Employee_CLs
             .Include(e => e.Employee)
             .Where(e => e.Eid == eid)
+            .AsQueryable();
+
+        var totalCount = await query.CountAsync();
+        var employeeCLs = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
         if (employeeCLs == null || !employeeCLs.Any())
@@ -52,7 +72,15 @@ public class EmployeeCLController : ControllerBase
             return NotFound(new { Success = false, Message = "Không tìm thấy thông tin hợp đồng lao động cho nhân viên này" });
         }
 
-        return Ok(new { Success = true, Data = employeeCLs });
+        return Ok(new
+        {
+            Success = true,
+            Data = employeeCLs,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+        });
     }
 
     [HttpPost]

@@ -25,12 +25,15 @@ public class EmployeeInsuranceService : IDisposable
         };
     }
 
-    public async Task<EmployeeInsuranceListResponse> GetInsurancesAsync(string? name = null, int? eid = null, int? iid = null)
+    public async Task<EmployeeInsuranceListResponse> GetInsurancesAsync(
+        string? name = null, int? eid = null, int? iid = null, int page = 1, int pageSize = 10)
     {
         var queryParams = new List<string>();
         if (!string.IsNullOrEmpty(name)) queryParams.Add($"name={Uri.EscapeDataString(name)}");
         if (eid.HasValue) queryParams.Add($"eid={eid.Value}");
         if (iid.HasValue) queryParams.Add($"iid={iid.Value}");
+        queryParams.Add($"page={page}");
+        queryParams.Add($"pageSize={pageSize}");
 
         var queryString = string.Join("&", queryParams);
         var response = await _client.GetAsync($"api/employee-insurance{(queryString.Length > 0 ? $"?{queryString}" : "")}");
@@ -53,9 +56,9 @@ public class EmployeeInsuranceService : IDisposable
         });
     }
 
-    public async Task<EmployeeInsuranceListResponse> GetByEidAsync(int eid)
+    public async Task<EmployeeInsuranceListResponse> GetByEidAsync(int eid, int page = 1, int pageSize = 10)
     {
-        var response = await _client.GetAsync($"api/employee-insurance/eid/{eid}");
+        var response = await _client.GetAsync($"api/employee-insurance/eid/{eid}?page={page}&pageSize={pageSize}");
         var responseJson = await response.Content.ReadAsStringAsync();
 
         return JsonSerializer.Deserialize<EmployeeInsuranceListResponse>(responseJson, new JsonSerializerOptions
@@ -121,6 +124,10 @@ public class EmployeeInsuranceListResponse
 {
     public bool Success { get; set; }
     public List<EmployeeInsuranceDto> Data { get; set; }
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages { get; set; }
 }
 
 public class EmployeeInsuranceDto

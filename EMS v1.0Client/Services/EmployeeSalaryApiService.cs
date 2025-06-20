@@ -25,9 +25,9 @@ public class EmployeeSalaryService : IDisposable
         };
     }
 
-    public async Task<EmployeeSalaryListResponse> GetAllAsync()
+    public async Task<EmployeeSalaryListResponse> GetAllAsync(int page = 1, int pageSize = 10)
     {
-        var response = await _client.GetAsync("api/employee-salary");
+        var response = await _client.GetAsync($"api/employee-salary?page={page}&pageSize={pageSize}");
         var responseJson = await response.Content.ReadAsStringAsync();
 
         return JsonSerializer.Deserialize<EmployeeSalaryListResponse>(responseJson, new JsonSerializerOptions
@@ -93,6 +93,10 @@ public class EmployeeSalaryListResponse
 {
     public bool Success { get; set; }
     public List<EmployeeSalaryDto> Data { get; set; }
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages { get; set; }
 }
 
 public class EmployeeSalaryDto

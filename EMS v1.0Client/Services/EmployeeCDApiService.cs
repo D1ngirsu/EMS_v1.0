@@ -25,9 +25,9 @@ public class EmployeeCDService : IDisposable
         };
     }
 
-    public async Task<EmployeeCDListResponse> GetAllAsync()
+    public async Task<EmployeeCDListResponse> GetAllAsync(int page = 1, int pageSize = 10)
     {
-        var response = await _client.GetAsync("api/employee-cd");
+        var response = await _client.GetAsync($"api/employee-cd?page={page}&pageSize={pageSize}");
         var responseJson = await response.Content.ReadAsStringAsync();
 
         return JsonSerializer.Deserialize<EmployeeCDListResponse>(responseJson, new JsonSerializerOptions
@@ -104,6 +104,10 @@ public class EmployeeCDListResponse
 {
     public bool Success { get; set; }
     public List<EmployeeCDDto> Data { get; set; }
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages { get; set; }
 }
 
 public class EmployeeCDDto

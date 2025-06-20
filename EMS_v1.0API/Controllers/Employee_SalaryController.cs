@@ -15,14 +15,28 @@ public class EmployeeSalaryController : ControllerBase
     }
 
     [HttpGet]
-    [SessionAuthorize(RequiredRole = new[] { "PayrollOfficer"})]
-    public async Task<IActionResult> GetAll()
+    [SessionAuthorize(RequiredRole = new[] { "PayrollOfficer" })]
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var salaries = await _context.Employee_Salaries
+        var query = _context.Employee_Salaries
             .Include(e => e.Employee)
+            .AsQueryable();
+
+        var totalCount = await query.CountAsync();
+        var salaries = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        return Ok(new { Success = true, Data = salaries });
+        return Ok(new
+        {
+            Success = true,
+            Data = salaries,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+        });
     }
 
     [HttpGet("{eid}")]
@@ -107,5 +121,4 @@ public class EmployeeSalaryController : ControllerBase
             return BadRequest(new { Success = false, Message = "Lỗi khi cập nhật: " + ex.Message });
         }
     }
-
 }

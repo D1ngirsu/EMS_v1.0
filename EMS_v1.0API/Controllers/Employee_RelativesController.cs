@@ -15,7 +15,7 @@ public class EmployeeRelativesController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll([FromQuery] int? eid)
+    public async Task<IActionResult> GetAll([FromQuery] int? eid, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
         var query = _context.Employee_Relatives
             .Include(e => e.Employee)
@@ -26,8 +26,21 @@ public class EmployeeRelativesController : ControllerBase
             query = query.Where(e => e.Eid == eid.Value);
         }
 
-        var relatives = await query.ToListAsync();
-        return Ok(new { Success = true, Data = relatives });
+        var totalCount = await query.CountAsync();
+        var relatives = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
+            .ToListAsync();
+
+        return Ok(new
+        {
+            Success = true,
+            Data = relatives,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+        });
     }
 
     [HttpGet("{relId}")]
@@ -46,17 +59,33 @@ public class EmployeeRelativesController : ControllerBase
     }
 
     [HttpGet("by-employee/{eid}")]
-    public async Task<IActionResult> GetByEmployeeId(int eid)
+    public async Task<IActionResult> GetByEmployeeId(int eid, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var relatives = await _context.Employee_Relatives
+        var query = _context.Employee_Relatives
             .Where(e => e.Eid == eid)
             .Include(e => e.Employee)
+            .AsQueryable();
+
+        var totalCount = await query.CountAsync();
+        var relatives = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
+
         if (relatives == null || !relatives.Any())
         {
             return NotFound(new { Success = false, Message = "Không tìm thấy thông tin người thân cho nhân viên này" });
         }
-        return Ok(new { Success = true, Data = relatives });
+
+        return Ok(new
+        {
+            Success = true,
+            Data = relatives,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+        });
     }
 
     [HttpPost]
@@ -116,7 +145,7 @@ public class EmployeeRelativesController : ControllerBase
     }
 
     [HttpDelete("{relId}")]
-    [SessionAuthorize(RequiredRole = new[] { "HR" } )]
+    [SessionAuthorize(RequiredRole = new[] { "HR" })]
     public async Task<IActionResult> Delete(int relId)
     {
         var relative = await _context.Employee_Relatives.FindAsync(relId);

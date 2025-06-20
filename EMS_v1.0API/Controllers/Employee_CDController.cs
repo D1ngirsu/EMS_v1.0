@@ -14,13 +14,27 @@ public class EmployeeCDController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var employeeCDs = await _context.Employee_CDs
+        var query = _context.Employee_CDs
             .Include(e => e.Employee)
+            .AsQueryable();
+
+        var totalCount = await query.CountAsync();
+        var employeeCDs = await query
+            .Skip((page - 1) * pageSize)
+            .Take(pageSize)
             .ToListAsync();
 
-        return Ok(new { Success = true, Data = employeeCDs });
+        return Ok(new
+        {
+            Success = true,
+            Data = employeeCDs,
+            TotalCount = totalCount,
+            Page = page,
+            PageSize = pageSize,
+            TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+        });
     }
 
     [HttpGet("{eid}")]
