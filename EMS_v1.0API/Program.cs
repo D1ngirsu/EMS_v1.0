@@ -66,6 +66,7 @@ app.UseSession(); // Enable session middleware
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
+app.UseStaticFiles();
 
 // Auto-migrate database
 using (var scope = app.Services.CreateScope())

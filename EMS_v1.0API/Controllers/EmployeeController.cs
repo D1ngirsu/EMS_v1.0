@@ -1,7 +1,9 @@
-﻿using BCrypt.Net; 
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
+using System.IO;
+using System;
+using Microsoft.AspNetCore.Http;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -9,34 +11,77 @@ using System.Threading.Tasks;
 public class EmployeeController : ControllerBase
 {
     private readonly AppDbContext _context;
-    
+    private readonly string _imageBasePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Img", "Employee");
+    private readonly string[] _allowedExtensions = { ".jpg", ".jpeg", ".png" };
+    private readonly long _maxFileSize = 5 * 1024 * 1024; // 5MB
+
     public EmployeeController(AppDbContext context)
     {
         _context = context;
+        // Ensure directory exists
+        if (!Directory.Exists(_imageBasePath))
+        {
+            Directory.CreateDirectory(_imageBasePath);
+        }
+    }
+
+    private bool IsValidImage(IFormFile image)
+    {
+        if (image == null) return true; // Image is optional
+        var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
+        if (!_allowedExtensions.Contains(extension))
+        {
+            return false;
+        }
+        if (image.Length > _maxFileSize)
+        {
+            return false;
+        }
+        return true;
     }
 
     [HttpPost]
     [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
-    public async Task<IActionResult> CreateEmployee([FromBody] Employee employee)
+    public async Task<IActionResult> CreateEmployee([FromForm] Employee employee, IFormFile? image)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ", Errors = ModelState });
         }
 
+        // Validate image
+        if (image != null && !IsValidImage(image))
+        {
+            return BadRequest(new { Success = false, Message = "Ảnh không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
+        }
+
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // Khởi tạo các collection nếu null
+            // Handle image upload
+            if (image != null)
+            {
+                var fileExtension = Path.GetExtension(image.FileName);
+                var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
+                var filePath = Path.Combine(_imageBasePath, randomFileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await image.CopyToAsync(stream);
+                }
+                employee.Img = $"/Img/Employee/{randomFileName}";
+            }
+
+            // Initialize collections if null
             employee.Applications ??= new List<Employee_Application>();
             employee.Relatives ??= new List<Employee_Relatives>();
             employee.TodoList ??= new List<Employee_Todolist>();
 
-            // Thêm Employee vào cơ sở dữ liệu
+            // Add Employee to database
             _context.Employees.Add(employee);
             await _context.SaveChangesAsync();
 
-            // Commit giao dịch
+            // Commit transaction
             await transaction.CommitAsync();
 
             return CreatedAtAction(nameof(GetEmployee), new { eid = employee.Eid },
@@ -51,11 +96,11 @@ public class EmployeeController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetEmployees(
-    [FromQuery] int page = 1,
-    [FromQuery] int pageSize = 10,
-    [FromQuery] string? name = null,
-    [FromQuery] int? eid = null,
-    [FromQuery] int? unitId = null)
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? name = null,
+        [FromQuery] int? eid = null,
+        [FromQuery] int? unitId = null)
     {
         var query = _context.Employees
             .Include(e => e.OrganizationUnit)
@@ -63,7 +108,7 @@ public class EmployeeController : ControllerBase
             .Include(e => e.Position)
             .AsQueryable();
 
-        // Áp dụng bộ lọc tìm kiếm
+        // Apply search filters
         if (!string.IsNullOrEmpty(name))
         {
             query = query.Where(e => e.Name.Contains(name));
@@ -133,7 +178,7 @@ public class EmployeeController : ControllerBase
     {
         var employee = await _context.Employees
             .Include(e => e.OrganizationUnit)
-                .ThenInclude(o => o.Parent) // Bao gồm phòng ban cha
+                .ThenInclude(o => o.Parent)
             .Include(e => e.Position)
             .FirstOrDefaultAsync(e => e.Eid == eid);
 
@@ -178,9 +223,39 @@ public class EmployeeController : ControllerBase
         return Ok(new { Success = true, Data = employeeDto });
     }
 
+    [HttpGet("image/{eid}")]
+    public async Task<IActionResult> GetEmployeeImage(int eid)
+    {
+        var employee = await _context.Employees
+            .FirstOrDefaultAsync(e => e.Eid == eid);
+
+        if (employee == null || string.IsNullOrEmpty(employee.Img))
+        {
+            return NotFound(new { Success = false, Message = "Không tìm thấy ảnh nhân viên" });
+        }
+
+        var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", employee.Img.TrimStart('/'));
+        if (!System.IO.File.Exists(imagePath)) // Fix: Use System.IO.File to check file existence
+        {
+            return NotFound(new { Success = false, Message = "Tệp ảnh không tồn tại" });
+        }
+
+        var imageBytes = await System.IO.File.ReadAllBytesAsync(imagePath); // Fix: Use System.IO.File for file operations
+        var extension = Path.GetExtension(imagePath).ToLowerInvariant();
+        var contentType = extension switch
+        {
+            ".jpg" => "image/jpeg",
+            ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            _ => "application/octet-stream"
+        };
+
+        return File(imageBytes, contentType); // No change needed here
+    }
+
     [HttpPut("{eid}")]
     [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
-    public async Task<IActionResult> UpdateEmployee(int eid, [FromBody] Employee employee)
+    public async Task<IActionResult> UpdateEmployee(int eid, [FromForm] Employee employee, IFormFile? image)
     {
         if (eid != employee.Eid)
         {
@@ -190,6 +265,26 @@ public class EmployeeController : ControllerBase
         if (!ModelState.IsValid)
         {
             return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ", Errors = ModelState });
+        }
+
+        // Validate image
+        if (image != null && !IsValidImage(image))
+        {
+            return BadRequest(new { Success = false, Message = "Ảnh không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
+        }
+
+        // Handle image upload
+        if (image != null)
+        {
+            var fileExtension = Path.GetExtension(image.FileName);
+            var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
+            var filePath = Path.Combine(_imageBasePath, randomFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await image.CopyToAsync(stream);
+            }
+            employee.Img = $"/Img/Employee/{randomFileName}";
         }
 
         _context.Entry(employee).State = EntityState.Modified;
@@ -226,6 +321,16 @@ public class EmployeeController : ControllerBase
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
+            // Delete associated image file
+            if (!string.IsNullOrEmpty(employee.Img))
+            {
+                var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", employee.Img.TrimStart('/'));
+                if (System.IO.File.Exists(imagePath))
+                {
+                    System.IO.File.Delete(imagePath);
+                }
+            }
+
             _context.Employees.Remove(employee);
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();

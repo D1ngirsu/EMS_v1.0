@@ -1,17 +1,43 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.IO;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
 
-// Employee_AS Controller
 [ApiController]
 [Route("api/employee-as")]
 [SessionAuthorize]
 public class EmployeeASController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly string _imageBasePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Img", "Employee_AS");
+    private readonly string[] _allowedExtensions = { ".jpg", ".jpeg", ".png" };
+    private readonly long _maxFileSize = 5 * 1024 * 1024; // 5MB
 
     public EmployeeASController(AppDbContext context)
     {
         _context = context;
+        // Ensure directory exists
+        if (!Directory.Exists(_imageBasePath))
+        {
+            Directory.CreateDirectory(_imageBasePath);
+        }
+    }
+
+    private bool IsValidImage(IFormFile image)
+    {
+        if (image == null) return true; // Image is optional
+        var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
+        if (!_allowedExtensions.Contains(extension))
+        {
+            return false;
+        }
+        if (image.Length > _maxFileSize)
+        {
+            return false;
+        }
+        return true;
     }
 
     [HttpGet]
@@ -53,21 +79,119 @@ public class EmployeeASController : ControllerBase
         return Ok(new { Success = true, Data = employeeAS });
     }
 
+    [HttpGet("image1/{eid}")]
+    public async Task<IActionResult> GetDegreeImage1(int eid)
+    {
+        var employeeAS = await _context.Employee_ASs
+            .FirstOrDefaultAsync(e => e.Eid == eid);
+
+        if (employeeAS == null || string.IsNullOrEmpty(employeeAS.DegreeImg1))
+        {
+            return NotFound(new { Success = false, Message = "Không tìm thấy ảnh DegreeImg1" });
+        }
+
+        var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", employeeAS.DegreeImg1.TrimStart('/'));
+        if (!System.IO.File.Exists(imagePath))
+        {
+            return NotFound(new { Success = false, Message = "Tệp ảnh không tồn tại" });
+        }
+
+        var imageBytes = await System.IO.File.ReadAllBytesAsync(imagePath);
+        var extension = Path.GetExtension(imagePath).ToLowerInvariant();
+        var contentType = extension switch
+        {
+            ".jpg" => "image/jpeg",
+            ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            _ => "application/octet-stream"
+        };
+
+        return File(imageBytes, contentType);
+    }
+
+    [HttpGet("image2/{eid}")]
+    public async Task<IActionResult> GetDegreeImage2(int eid)
+    {
+        var employeeAS = await _context.Employee_ASs
+            .FirstOrDefaultAsync(e => e.Eid == eid);
+
+        if (employeeAS == null || string.IsNullOrEmpty(employeeAS.DegreeImg2))
+        {
+            return NotFound(new { Success = false, Message = "Không tìm thấy ảnh DegreeImg2" });
+        }
+
+        var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", employeeAS.DegreeImg2.TrimStart('/'));
+        if (!System.IO.File.Exists(imagePath))
+        {
+            return NotFound(new { Success = false, Message = "Tệp ảnh không tồn tại" });
+        }
+
+        var imageBytes = await System.IO.File.ReadAllBytesAsync(imagePath);
+        var extension = Path.GetExtension(imagePath).ToLowerInvariant();
+        var contentType = extension switch
+        {
+            ".jpg" => "image/jpeg",
+            ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            _ => "application/octet-stream"
+        };
+
+        return File(imageBytes, contentType);
+    }
+
     [HttpPost]
     [SessionAuthorize(RequiredRole = new[] { "HR" })]
-    public async Task<IActionResult> Create([FromBody] Employee_AS employeeAS)
+    public async Task<IActionResult> Create([FromForm] Employee_AS employeeAS, IFormFile? image1, IFormFile? image2)
     {
         if (!ModelState.IsValid)
         {
             return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ", Errors = ModelState });
         }
 
+        // Validate images
+        if (image1 != null && !IsValidImage(image1))
+        {
+            return BadRequest(new { Success = false, Message = "Ảnh DegreeImg1 không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
+        }
+        if (image2 != null && !IsValidImage(image2))
+        {
+            return BadRequest(new { Success = false, Message = "Ảnh DegreeImg2 không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
+        }
+
         try
         {
+            // Handle image1 upload
+            if (image1 != null)
+            {
+                var fileExtension = Path.GetExtension(image1.FileName);
+                var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
+                var filePath = Path.Combine(_imageBasePath, randomFileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await image1.CopyToAsync(stream);
+                }
+                employeeAS.DegreeImg1 = $"/Img/Employee_AS/{randomFileName}";
+            }
+
+            // Handle image2 upload
+            if (image2 != null)
+            {
+                var fileExtension = Path.GetExtension(image2.FileName);
+                var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
+                var filePath = Path.Combine(_imageBasePath, randomFileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await image2.CopyToAsync(stream);
+                }
+                employeeAS.DegreeImg2 = $"/Img/Employee_AS/{randomFileName}";
+            }
+
             _context.Employee_ASs.Add(employeeAS);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetByEid), new { uid = employeeAS.Eid },
+            return CreatedAtAction(nameof(GetByEid), new { eid = employeeAS.Eid },
                 new { Success = true, Data = employeeAS, Message = "Tạo thông tin học hàm học vị thành công" });
         }
         catch (Exception ex)
@@ -78,7 +202,7 @@ public class EmployeeASController : ControllerBase
 
     [HttpPut("{eid}")]
     [SessionAuthorize(RequiredRole = new[] { "HR" })]
-    public async Task<IActionResult> Update(int eid, [FromBody] Employee_AS employeeAS)
+    public async Task<IActionResult> Update(int eid, [FromForm] Employee_AS employeeAS, IFormFile? image1, IFormFile? image2)
     {
         if (eid != employeeAS.Eid)
         {
@@ -88,6 +212,44 @@ public class EmployeeASController : ControllerBase
         if (!ModelState.IsValid)
         {
             return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ", Errors = ModelState });
+        }
+
+        // Validate images
+        if (image1 != null && !IsValidImage(image1))
+        {
+            return BadRequest(new { Success = false, Message = "Ảnh DegreeImg1 không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
+        }
+        if (image2 != null && !IsValidImage(image2))
+        {
+            return BadRequest(new { Success = false, Message = "Ảnh DegreeImg2 không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
+        }
+
+        // Handle image1 upload
+        if (image1 != null)
+        {
+            var fileExtension = Path.GetExtension(image1.FileName);
+            var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
+            var filePath = Path.Combine(_imageBasePath, randomFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await image1.CopyToAsync(stream);
+            }
+            employeeAS.DegreeImg1 = $"/Img/Employee_AS/{randomFileName}";
+        }
+
+        // Handle image2 upload
+        if (image2 != null)
+        {
+            var fileExtension = Path.GetExtension(image2.FileName);
+            var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
+            var filePath = Path.Combine(_imageBasePath, randomFileName);
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await image2.CopyToAsync(stream);
+            }
+            employeeAS.DegreeImg2 = $"/Img/Employee_AS/{randomFileName}";
         }
 
         _context.Entry(employeeAS).State = EntityState.Modified;
@@ -123,6 +285,24 @@ public class EmployeeASController : ControllerBase
 
         try
         {
+            // Delete associated image files
+            if (!string.IsNullOrEmpty(employeeAS.DegreeImg1))
+            {
+                var imagePath1 = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", employeeAS.DegreeImg1.TrimStart('/'));
+                if (System.IO.File.Exists(imagePath1))
+                {
+                    System.IO.File.Delete(imagePath1);
+                }
+            }
+            if (!string.IsNullOrEmpty(employeeAS.DegreeImg2))
+            {
+                var imagePath2 = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", employeeAS.DegreeImg2.TrimStart('/'));
+                if (System.IO.File.Exists(imagePath2))
+                {
+                    System.IO.File.Delete(imagePath2);
+                }
+            }
+
             _context.Employee_ASs.Remove(employeeAS);
             await _context.SaveChangesAsync();
             return Ok(new { Success = true, Message = "Xóa thông tin học hàm học vị thành công" });

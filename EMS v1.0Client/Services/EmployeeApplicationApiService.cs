@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
 
 public class EmployeeApplicationService : IDisposable
 {
@@ -69,10 +70,14 @@ public class EmployeeApplicationService : IDisposable
         });
     }
 
-    public async Task<EmployeeApplicationResponse> CreateAsync(EmployeeApplicationDto application)
+    public async Task<EmployeeApplicationResponse> CreateAsync(EmployeeApplicationDto application, byte[] imageData = null)
     {
-        var json = JsonSerializer.Serialize(application);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent(JsonSerializer.Serialize(application), Encoding.UTF8, "application/json"), "application");
+        if (imageData != null)
+        {
+            content.Add(new ByteArrayContent(imageData), "image", $"image_{Guid.NewGuid()}.jpg");
+        }
 
         var response = await _client.PostAsync("api/employee-application", content);
         var responseJson = await response.Content.ReadAsStringAsync();
@@ -83,10 +88,14 @@ public class EmployeeApplicationService : IDisposable
         });
     }
 
-    public async Task<EmployeeApplicationResponse> UpdateAsync(int appId, EmployeeApplicationDto application)
+    public async Task<EmployeeApplicationResponse> UpdateAsync(int appId, EmployeeApplicationDto application, byte[] imageData = null)
     {
-        var json = JsonSerializer.Serialize(application);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent(JsonSerializer.Serialize(application), Encoding.UTF8, "application/json"), "application");
+        if (imageData != null)
+        {
+            content.Add(new ByteArrayContent(imageData), "image", $"image_{Guid.NewGuid()}.jpg");
+        }
 
         var response = await _client.PutAsync($"api/employee-application/{appId}", content);
         var responseJson = await response.Content.ReadAsStringAsync();

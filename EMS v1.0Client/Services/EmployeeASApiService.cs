@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
 
 public class EmployeeASService : IDisposable
 {
@@ -47,10 +48,18 @@ public class EmployeeASService : IDisposable
         });
     }
 
-    public async Task<EmployeeASResponse> CreateAsync(EmployeeASDto employeeAS)
+    public async Task<EmployeeASResponse> CreateAsync(EmployeeASDto employeeAS, byte[] imageData1 = null, byte[] imageData2 = null)
     {
-        var json = JsonSerializer.Serialize(employeeAS);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent(JsonSerializer.Serialize(employeeAS), Encoding.UTF8, "application/json"), "employeeAS");
+        if (imageData1 != null)
+        {
+            content.Add(new ByteArrayContent(imageData1), "image1", $"image_{Guid.NewGuid()}.jpg");
+        }
+        if (imageData2 != null)
+        {
+            content.Add(new ByteArrayContent(imageData2), "image2", $"image_{Guid.NewGuid()}.jpg");
+        }
 
         var response = await _client.PostAsync("api/employee-as", content);
         var responseJson = await response.Content.ReadAsStringAsync();
@@ -61,10 +70,18 @@ public class EmployeeASService : IDisposable
         });
     }
 
-    public async Task<EmployeeASResponse> UpdateAsync(int eid, EmployeeASDto employeeAS)
+    public async Task<EmployeeASResponse> UpdateAsync(int eid, EmployeeASDto employeeAS, byte[] imageData1 = null, byte[] imageData2 = null)
     {
-        var json = JsonSerializer.Serialize(employeeAS);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var content = new MultipartFormDataContent();
+        content.Add(new StringContent(JsonSerializer.Serialize(employeeAS), Encoding.UTF8, "application/json"), "employeeAS");
+        if (imageData1 != null)
+        {
+            content.Add(new ByteArrayContent(imageData1), "image1", $"image_{Guid.NewGuid()}.jpg");
+        }
+        if (imageData2 != null)
+        {
+            content.Add(new ByteArrayContent(imageData2), "image2", $"image_{Guid.NewGuid()}.jpg");
+        }
 
         var response = await _client.PutAsync($"api/employee-as/{eid}", content);
         var responseJson = await response.Content.ReadAsStringAsync();
