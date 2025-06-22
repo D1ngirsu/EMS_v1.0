@@ -41,8 +41,8 @@ namespace EMS_v1._0Client.Views.Auth
 
                 if (response.Success)
                 {
-                    // Store user info or navigate to main window
-                    var dashboardWindow = new DashboardWindow();
+                    // QUAN TRỌNG: Truyền cùng instance AuthApiService
+                    var dashboardWindow = new DashboardWindow(_authService);
                     dashboardWindow.Show();
                     Close();
                 }
@@ -61,6 +61,7 @@ namespace EMS_v1._0Client.Views.Auth
             }
         }
 
+
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             Close();
@@ -75,7 +76,7 @@ namespace EMS_v1._0Client.Views.Auth
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-            _authService?.Dispose();
+            //_authService?.Dispose();
         }
     }
 }

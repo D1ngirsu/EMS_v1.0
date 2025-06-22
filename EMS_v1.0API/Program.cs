@@ -20,7 +20,7 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SameSite = SameSiteMode.None;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // For HTTP in LAN
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // For HTTP in LAN
 });
 
 // Add Authentication with Cookie scheme
@@ -47,10 +47,6 @@ builder.Services.AddCors(options =>
     });
 });
 
-builder.WebHost.ConfigureKestrel(serverOptions =>
-{
-    serverOptions.ListenAnyIP(5105);
-});
 
 var app = builder.Build();
 
@@ -67,12 +63,13 @@ app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.UseStaticFiles();
+app.UseRouting();
 
 // Auto-migrate database
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    //context.Database.EnsureDeleted(); // Drops the database if it exists
+    context.Database.EnsureDeleted(); // Drops the database if it exists
     context.Database.EnsureCreated(); // Creates the database with the latest schema
 }
 

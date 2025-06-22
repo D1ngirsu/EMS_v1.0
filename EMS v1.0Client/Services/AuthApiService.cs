@@ -1,9 +1,10 @@
-﻿using System.Net;
+﻿using System.Collections.Generic;
+using System.Diagnostics;
+using System.Net;
 using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
 public class AuthApiService : IDisposable
 {
@@ -64,23 +65,103 @@ public class AuthApiService : IDisposable
     {
         try
         {
-            var response = await _client.GetAsync("api/auth/current-user");
-            if (!response.IsSuccessStatusCode) return null;
+            // Debug: Kiểm tra cookies
+            var cookies = _cookieContainer.GetCookies(_client.BaseAddress);
+            Debug.WriteLine($"[GetCurrentUser] Cookies count: {cookies.Count}");
 
-            var json = await response.Content.ReadAsStringAsync();
-            var jsonDoc = JsonDocument.Parse(json);
-
-            if (jsonDoc.RootElement.TryGetProperty("User", out var userElement))
+            foreach (Cookie cookie in cookies)
             {
-                return JsonSerializer.Deserialize<UserDto>(userElement.ToString(),
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+                Debug.WriteLine($"[GetCurrentUser] Cookie: {cookie.Name} = {cookie.Value}");
             }
 
+            var response = await _client.GetAsync("api/auth/current-user");
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            Debug.WriteLine($"[GetCurrentUser] Status: {response.StatusCode}");
+            Debug.WriteLine($"[GetCurrentUser] Full Response: {responseContent}");
+
+            if (!response.IsSuccessStatusCode)
+            {
+                Debug.WriteLine($"[GetCurrentUser] Request failed with status: {response.StatusCode}");
+                return null;
+            }
+
+            // Parse JSON response
+            var jsonDoc = JsonDocument.Parse(responseContent);
+
+            // Debug: Check if Success property exists
+            if (jsonDoc.RootElement.TryGetProperty("Success", out var successElement))
+            {
+                bool success = successElement.GetBoolean();
+                Debug.WriteLine($"[GetCurrentUser] API Success: {success}");
+
+                if (!success)
+                {
+                    if (jsonDoc.RootElement.TryGetProperty("Message", out var messageElement))
+                    {
+                        Debug.WriteLine($"[GetCurrentUser] API Error Message: {messageElement.GetString()}");
+                    }
+                    return null;
+                }
+            }
+            else if (jsonDoc.RootElement.TryGetProperty("success", out var successElementLower))
+            {
+                bool success = successElementLower.GetBoolean();
+                Debug.WriteLine($"[GetCurrentUser] API success (lowercase): {success}");
+
+                if (!success)
+                {
+                    if (jsonDoc.RootElement.TryGetProperty("message", out var messageElement))
+                    {
+                        Debug.WriteLine($"[GetCurrentUser] API error message: {messageElement.GetString()}");
+                    }
+                    return null;
+                }
+            }
+
+            // Try to get User property (case insensitive)
+            JsonElement userElement;
+            bool hasUser = jsonDoc.RootElement.TryGetProperty("User", out userElement) ||
+                          jsonDoc.RootElement.TryGetProperty("user", out userElement);
+
+            if (hasUser)
+            {
+                Debug.WriteLine($"[GetCurrentUser] User element found: {userElement.ToString()}");
+
+                var userDto = JsonSerializer.Deserialize<UserDto>(userElement.ToString(),
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                Debug.WriteLine($"[GetCurrentUser] Deserialized UserDto: Username={userDto?.Username}, Role={userDto?.Role}");
+                return userDto;
+            }
+            else
+            {
+                Debug.WriteLine("[GetCurrentUser] No User property found in response");
+                return null;
+            }
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[GetCurrentUser] Exception: {ex.Message}");
+            Debug.WriteLine($"[GetCurrentUser] StackTrace: {ex.StackTrace}");
             return null;
         }
-        catch
+    }
+
+    public async Task<bool> IsAuthenticatedAsync()
+    {
+        try
         {
-            return null;
+            Debug.WriteLine("[IsAuthenticatedAsync] Checking authentication...");
+            var user = await GetCurrentUserAsync();
+            bool isAuth = user != null;
+            Debug.WriteLine($"[IsAuthenticatedAsync] Result: {isAuth}");
+            return isAuth;
+        }
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[IsAuthenticatedAsync] Exception: {ex.Message}");
+            return false;
         }
     }
 
@@ -145,18 +226,7 @@ public class AuthApiService : IDisposable
         });
     }
 
-    public async Task<bool> IsAuthenticatedAsync()
-    {
-        try
-        {
-            var user = await GetCurrentUserAsync();
-            return user != null;
-        }
-        catch
-        {
-            return false;
-        }
-    }
+    
 
     public void Dispose()
     {
