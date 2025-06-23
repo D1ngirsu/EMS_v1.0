@@ -11,6 +11,9 @@ public class AuthApiService : IDisposable
     private readonly HttpClient _client;
     private readonly CookieContainer _cookieContainer;
 
+    // Thêm property để expose CookieContainer
+    public CookieContainer CookieContainer => _cookieContainer;
+
     public AuthApiService(string baseUrl)
     {
         _cookieContainer = new CookieContainer();
@@ -23,6 +26,16 @@ public class AuthApiService : IDisposable
         _client = new HttpClient(handler)
         {
             BaseAddress = new Uri(baseUrl)
+        };
+    }
+
+    // Thêm method để tạo HttpClientHandler với cùng CookieContainer
+    public HttpClientHandler CreateSharedHandler()
+    {
+        return new HttpClientHandler()
+        {
+            CookieContainer = _cookieContainer,
+            UseCookies = true
         };
     }
 
@@ -226,14 +239,11 @@ public class AuthApiService : IDisposable
         });
     }
 
-    
-
     public void Dispose()
     {
         _client?.Dispose();
     }
 }
-
 
 public class ChangePasswordRequest
 {

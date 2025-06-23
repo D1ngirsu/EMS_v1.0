@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -20,16 +20,22 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
     options.Cookie.SameSite = SameSiteMode.None;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest; // For HTTP in LAN
+    options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+    options.Cookie.Path = "/"; // Rõ ràng đặt path
 });
 
-// Add Authentication with Cookie scheme
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
     {
-        options.Cookie.Name = ".AspNetCore.Session";
-        options.LoginPath = "/api/auth/login"; // Adjust to your login endpoint
-        options.AccessDeniedPath = "/api/auth/access-denied"; // Handle forbidden requests
+        options.Cookie.Name = ".AspNetCore.AuthCookie"; // Tách biệt với session cookie
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SameSite = SameSiteMode.None;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.Cookie.Path = "/";
+        options.LoginPath = "/api/auth/login";
+        options.AccessDeniedPath = "/api/auth/access-denied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(24);
+        options.SlidingExpiration = true;
     });
 
 // Add Authorization
@@ -69,7 +75,7 @@ app.UseRouting();
 using (var scope = app.Services.CreateScope())
 {
     var context = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    context.Database.EnsureDeleted(); // Drops the database if it exists
+    //context.Database.EnsureDeleted(); // Drops the database if it exists
     context.Database.EnsureCreated(); // Creates the database with the latest schema
 }
 

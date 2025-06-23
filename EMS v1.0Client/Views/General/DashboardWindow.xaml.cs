@@ -19,7 +19,7 @@ namespace EMS_v1._0Client.Views.General
             LoadUserInfo();
         }
 
-        public DashboardWindow() : this(new AuthApiService("https://localhost:5105"))
+        public DashboardWindow() : this(new AuthApiService("http://localhost:5165")) 
         {
         }
 
@@ -145,7 +145,9 @@ namespace EMS_v1._0Client.Views.General
         private void ProfileButton_Click(object sender, RoutedEventArgs e)
         {
             // TODO: Implement Profile Window navigation
-            MessageBox.Show("Chuyển đến trang Profile (Chưa được triển khai)", "Thông báo");
+            var profileWindow = new MyProfileWindow(_authService);
+            profileWindow.Show();
+            Close();
         }
 
         private void EmployeeManagementButton_Click(object sender, RoutedEventArgs e)

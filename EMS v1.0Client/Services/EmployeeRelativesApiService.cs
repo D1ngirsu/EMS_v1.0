@@ -10,15 +10,8 @@ public class EmployeeRelativesService : IDisposable
     private readonly HttpClient _client;
     private readonly CookieContainer _cookieContainer;
 
-    public EmployeeRelativesService(string baseUrl)
+    public EmployeeRelativesService(string baseUrl, HttpClientHandler handler)
     {
-        _cookieContainer = new CookieContainer();
-        var handler = new HttpClientHandler()
-        {
-            CookieContainer = _cookieContainer,
-            UseCookies = true
-        };
-
         _client = new HttpClient(handler)
         {
             BaseAddress = new Uri(baseUrl)

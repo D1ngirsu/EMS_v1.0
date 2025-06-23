@@ -114,6 +114,47 @@ public class AuthController : ControllerBase
         }
 
         var user = JsonSerializer.Deserialize<UserDto>(userJson);
+
+        // Lấy thông tin nhân viên đầy đủ
+        var employee = _context.Employees
+            .Include(e => e.OrganizationUnit)
+            .Include(e => e.Position)
+            .FirstOrDefault(e => e.Eid == user.Employee.Eid);
+
+        if (employee != null)
+        {
+            user.Employee = new EmployeeDto
+            {
+                Eid = employee.Eid,
+                Name = employee.Name,
+                DoB = employee.DoB,
+                Email = employee.Email,
+                Phone = employee.Phone,
+                Address = employee.Address,
+                Gender = employee.Gender,
+                Experience = employee.Experience,
+                Source = employee.Source,
+                BankNumber = employee.BankNumber,
+                Bank = employee.Bank,
+                Img = employee.Img,
+                OrganizationUnit = employee.OrganizationUnit != null ? new OrganizationUnitDto
+                {
+                    UnitId = employee.OrganizationUnit.UnitId,
+                    UnitName = employee.OrganizationUnit.UnitName,
+                    UnitType = employee.OrganizationUnit.UnitType
+                } : null,
+                Position = employee.Position != null ? new PositionDto
+                {
+                    PositionId = employee.Position.PositionId,
+                    PositionName = employee.Position.PositionName
+                } : null
+            };
+        }
+
+        // Cập nhật session
+        var updatedUserJson = JsonSerializer.Serialize(user);
+        HttpContext.Session.SetString("User", updatedUserJson);
+
         return Ok(new { Success = true, User = user });
     }
 

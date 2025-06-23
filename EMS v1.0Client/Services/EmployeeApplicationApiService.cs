@@ -11,15 +11,8 @@ public class EmployeeApplicationService : IDisposable
     private readonly HttpClient _client;
     private readonly CookieContainer _cookieContainer;
 
-    public EmployeeApplicationService(string baseUrl)
+    public EmployeeApplicationService(string baseUrl, HttpClientHandler handler)
     {
-        _cookieContainer = new CookieContainer();
-        var handler = new HttpClientHandler()
-        {
-            CookieContainer = _cookieContainer,
-            UseCookies = true
-        };
-
         _client = new HttpClient(handler)
         {
             BaseAddress = new Uri(baseUrl)

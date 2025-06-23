@@ -10,15 +10,8 @@ public class EmployeeCDService : IDisposable
     private readonly HttpClient _client;
     private readonly CookieContainer _cookieContainer;
 
-    public EmployeeCDService(string baseUrl)
+    public EmployeeCDService(string baseUrl, HttpClientHandler handler)
     {
-        _cookieContainer = new CookieContainer();
-        var handler = new HttpClientHandler()
-        {
-            CookieContainer = _cookieContainer,
-            UseCookies = true
-        };
-
         _client = new HttpClient(handler)
         {
             BaseAddress = new Uri(baseUrl)

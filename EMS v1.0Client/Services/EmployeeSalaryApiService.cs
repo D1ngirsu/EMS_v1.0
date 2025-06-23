@@ -10,6 +10,13 @@ public class EmployeeSalaryService : IDisposable
     private readonly HttpClient _client;
     private readonly CookieContainer _cookieContainer;
 
+    public EmployeeSalaryService(string baseUrl, HttpClientHandler handler)
+    {
+        _client = new HttpClient(handler)
+        {
+            BaseAddress = new Uri(baseUrl)
+        };
+    }
     public EmployeeSalaryService(string baseUrl)
     {
         _cookieContainer = new CookieContainer();
