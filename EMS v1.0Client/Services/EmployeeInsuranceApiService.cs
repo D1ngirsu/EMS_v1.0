@@ -8,14 +8,16 @@ using System.Collections.Generic;
 public class EmployeeInsuranceService : IDisposable
 {
     private readonly HttpClient _client;
-    private readonly CookieContainer _cookieContainer;
+    private readonly HttpClientHandler _handler;
 
     public EmployeeInsuranceService(string baseUrl, HttpClientHandler handler)
     {
-        _client = new HttpClient(handler)
-        {
-            BaseAddress = new Uri(baseUrl)
-        };
+        if (string.IsNullOrEmpty(baseUrl))
+            throw new ArgumentNullException(nameof(baseUrl));
+        if (!baseUrl.EndsWith("/"))
+            baseUrl += "/";
+        _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        _client = new HttpClient(handler) { BaseAddress = new Uri(baseUrl) };
     }
 
     public async Task<EmployeeInsuranceListResponse> GetInsurancesAsync(

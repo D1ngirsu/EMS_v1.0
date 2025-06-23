@@ -145,9 +145,9 @@ namespace EMS_v1._0Client.Views.General
         private void ProfileButton_Click(object sender, RoutedEventArgs e)
         {
             // TODO: Implement Profile Window navigation
-            var profileWindow = new MyProfileWindow(_authService);
-            profileWindow.Show();
-            Close();
+            //var profileWindow = new MyProfileWindow(_authService);
+            //profileWindow.Show();
+            //Close();
         }
 
         private void EmployeeManagementButton_Click(object sender, RoutedEventArgs e)

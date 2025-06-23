@@ -1,22 +1,25 @@
-﻿using System.Net;
+﻿using System.Collections.Generic;
+using System.Net;
 using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Collections.Generic;
-using System.Net.Http.Headers;
 
 public class EmployeeApplicationService : IDisposable
 {
     private readonly HttpClient _client;
-    private readonly CookieContainer _cookieContainer;
+    private readonly HttpClientHandler _handler;
 
     public EmployeeApplicationService(string baseUrl, HttpClientHandler handler)
     {
-        _client = new HttpClient(handler)
-        {
-            BaseAddress = new Uri(baseUrl)
-        };
+        if (string.IsNullOrEmpty(baseUrl))
+            throw new ArgumentNullException(nameof(baseUrl));
+        if (!baseUrl.EndsWith("/"))
+            baseUrl += "/";
+        _handler = handler ?? throw new ArgumentNullException(nameof(handler));
+        _client = new HttpClient(handler) { BaseAddress = new Uri(baseUrl) };
     }
 
     public async Task<EmployeeApplicationListResponse> GetAllAsync(int? eid = null, int page = 1, int pageSize = 10)
