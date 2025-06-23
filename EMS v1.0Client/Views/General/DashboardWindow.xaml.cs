@@ -198,7 +198,6 @@ namespace EMS_v1._0Client.Views.General
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-            //_authService?.Dispose();
         }
 
     }

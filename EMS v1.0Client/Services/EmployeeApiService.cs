@@ -12,15 +12,22 @@ public class EmployeeApiService : IDisposable
 {
     private readonly HttpClient _client;
     private readonly HttpClientHandler _handler;
+    private bool _disposed;
 
     public EmployeeApiService(string baseUrl, HttpClientHandler handler)
     {
-        if (string.IsNullOrEmpty(baseUrl))
-            throw new ArgumentNullException(nameof(baseUrl));
-        if (!baseUrl.EndsWith("/"))
-            baseUrl += "/";
         _handler = handler ?? throw new ArgumentNullException(nameof(handler));
-        _client = new HttpClient(handler) { BaseAddress = new Uri(baseUrl) };
+        _client = new HttpClient(_handler)
+        {
+            BaseAddress = new Uri(baseUrl)
+        };
+        // Log cookies during initialization
+        var cookies = _handler.CookieContainer.GetCookies(_client.BaseAddress);
+        Debug.WriteLine($"[EmployeeApiService] Initial Cookie count: {cookies.Count}");
+        foreach (System.Net.Cookie cookie in cookies)
+        {
+            Debug.WriteLine($"[EmployeeApiService] Initial Cookie: {cookie.Name} = {cookie.Value}");
+        }
     }
 
 
@@ -61,42 +68,39 @@ public class EmployeeApiService : IDisposable
         });
     }
 
-    public async Task<EmployeeResponse> GetEmployeeAsync(int eid)
+    public async Task<ApiResponse<EmployeeDto>> GetEmployeeAsync(int eid)
     {
         try
         {
-            var requestUri = new Uri(_client.BaseAddress, $"api/employee/{eid}");
-            var cookies = _handler.CookieContainer.GetCookies(requestUri);
-            Debug.WriteLine($"[GetEmployeeAsync] Request URL: {requestUri}");
-            Debug.WriteLine($"[GetEmployeeAsync] Cookies count: {cookies?.Count ?? 0}");
-            foreach (Cookie cookie in cookies ?? new CookieCollection())
+            // Log cookies before request
+            var cookies = _handler.CookieContainer.GetCookies(_client.BaseAddress);
+            Debug.WriteLine($"[GetEmployeeAsync] Cookies count: {cookies.Count}");
+            if (cookies.Count == 0)
+            {
+                Debug.WriteLine("[GetEmployeeAsync] Warning: No cookies found in CookieContainer");
+            }
+            foreach (System.Net.Cookie cookie in cookies)
             {
                 Debug.WriteLine($"[GetEmployeeAsync] Cookie: {cookie.Name} = {cookie.Value}");
             }
 
-            if (cookies == null || cookies.Count == 0)
-            {
-                Debug.WriteLine("[GetEmployeeAsync] Warning: No cookies found in CookieContainer");
-            }
-
+            Debug.WriteLine($"[GetEmployeeAsync] Request URL: {_client.BaseAddress}api/employee/{eid}");
             var response = await _client.GetAsync($"api/employee/{eid}");
             var responseJson = await response.Content.ReadAsStringAsync();
             Debug.WriteLine($"[GetEmployeeAsync] Response: {responseJson}");
 
-            var employeeResponse = JsonSerializer.Deserialize<EmployeeResponse>(responseJson, new JsonSerializerOptions
+            return JsonSerializer.Deserialize<ApiResponse<EmployeeDto>>(responseJson, new JsonSerializerOptions
             {
                 PropertyNameCaseInsensitive = true
             });
-
-            return employeeResponse;
         }
         catch (Exception ex)
         {
-            Debug.WriteLine($"[GetEmployeeAsync] Exception: {ex.Message}\nStackTrace: {ex.StackTrace}");
-            return new EmployeeResponse
+            Debug.WriteLine($"[GetEmployeeAsync] Exception: {ex.Message}");
+            return new ApiResponse<EmployeeDto>
             {
                 Success = false,
-                Message = $"Lỗi khi lấy thông tin nhân viên: {ex.Message}"
+                Message = ex.Message
             };
         }
     }
@@ -158,4 +162,11 @@ public class GenericResponse
 {
     public bool Success { get; set; }
     public string Message { get; set; }
+}
+
+public class ApiResponse<T>
+{
+    public bool Success { get; set; }
+    public string Message { get; set; }
+    public T Data { get; set; }
 }
