@@ -1,7 +1,7 @@
 ﻿<Window x:Class="EMS_v1._0Client.Views.Auth.LoginWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Login" Height="300" Width="400"
+        Title="Login" Height="352" Width="400"
         WindowStartupLocation="CenterScreen"
         ResizeMode="NoResize">
     <Grid Margin="20">
@@ -45,7 +45,7 @@
 
         <StackPanel Grid.Row="5" 
                    Orientation="Horizontal"
-                   HorizontalAlignment="Center">
+                   HorizontalAlignment="Center" Margin="0,10,0,38">
             <Button Content="Đăng nhập"
                    Width="100"
                    Height="30"
@@ -62,7 +62,7 @@
                   Foreground="Red"
                   TextWrapping="Wrap"
                   HorizontalAlignment="Center"
-                  Margin="0,20,0,0"
+                  Margin="0,60,0,0"
                   Visibility="Collapsed"/>
     </Grid>
 </Window>

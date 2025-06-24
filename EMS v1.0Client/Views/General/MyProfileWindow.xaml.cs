@@ -7,13 +7,13 @@ using System.Windows.Media.Imaging;
 
 namespace EMS_v1._0Client.Views.General
 {
-    public partial class DashboardWindow : Window
+    public partial class MyProfileWindow : Window
     {
         private readonly AuthApiService _authService;
         private readonly IHttpClientFactory _httpClientFactory;
         private UserDto _currentUser;
 
-        public DashboardWindow(IHttpClientFactory httpClientFactory)
+        public MyProfileWindow(IHttpClientFactory httpClientFactory)
         {
             InitializeComponent();
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
@@ -27,7 +27,6 @@ namespace EMS_v1._0Client.Views.General
             {
                 Debug.WriteLine("[LoadUserInfo] Starting to load user info...");
 
-                // Check if authenticated
                 bool isAuthenticated = await _authService.IsAuthenticatedAsync();
                 Debug.WriteLine($"[LoadUserInfo] IsAuthenticated result: {isAuthenticated}");
 
@@ -36,7 +35,6 @@ namespace EMS_v1._0Client.Views.General
                     Debug.WriteLine("[LoadUserInfo] User not authenticated, returning to login");
                     MessageBox.Show("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.", "Thông báo",
                         MessageBoxButton.OK, MessageBoxImage.Warning);
-
                     ReturnToLogin();
                     return;
                 }
@@ -48,8 +46,17 @@ namespace EMS_v1._0Client.Views.General
                 {
                     Debug.WriteLine($"[LoadUserInfo] Successfully loaded user: {_currentUser.Username}");
 
+                    // Set user info in UI
                     UserNameTextBlock.Text = _currentUser.Employee?.Name ?? _currentUser.Username;
-                    Debug.WriteLine($"[LoadUserInfo] Set username to: {UserNameTextBlock.Text}");
+                    ProfileNameTextBlock.Text = _currentUser.Employee?.Name ?? _currentUser.Username;
+                    UsernameTextBlock.Text = _currentUser.Username ?? "N/A";
+                    EmailTextBlock.Text = _currentUser.Employee?.Email ?? "N/A";
+                    RoleTextBlock.Text = _currentUser.Role ?? "N/A";
+                    UnitTextBlock.Text = _currentUser.Employee?.OrganizationUnit?.UnitName ?? "N/A";
+                    PositionTextBlock.Text = _currentUser.Employee?.Position?.PositionName ?? "N/A";
+                    DateOfBirthTextBlock.Text = _currentUser.Employee?.DoB.ToString("dd/MM/yyyy") ?? "N/A";
+                    GenderTextBlock.Text = _currentUser.Employee?.Gender ?? "N/A";
+                    AddressTextBlock.Text = _currentUser.Employee?.Address ?? "N/A";
 
                     // Load avatar if available
                     if (!string.IsNullOrEmpty(_currentUser.Employee?.Img))
@@ -57,12 +64,13 @@ namespace EMS_v1._0Client.Views.General
                         try
                         {
                             Debug.WriteLine($"[LoadUserInfo] Loading avatar: {_currentUser.Employee.Img}");
-                            UserAvatar.Source = new BitmapImage(new Uri(_currentUser.Employee.Img, UriKind.RelativeOrAbsolute));
+                            var avatarSource = new BitmapImage(new Uri(_currentUser.Employee.Img, UriKind.RelativeOrAbsolute));
+                            UserAvatar.Source = avatarSource;
+                            ProfileAvatar.Source = avatarSource;
                         }
                         catch (Exception avatarEx)
                         {
                             Debug.WriteLine($"[LoadUserInfo] Avatar load failed: {avatarEx.Message}");
-                            // Avatar load failed, use default
                         }
                     }
 
@@ -73,20 +81,16 @@ namespace EMS_v1._0Client.Views.General
                 else
                 {
                     Debug.WriteLine("[LoadUserInfo] _currentUser is null after GetCurrentUserAsync");
-                    MessageBox.Show("Không thể tải thông tin người dùng. Vui lòng đăng nhập lại. ", "Lỗi",
+                    MessageBox.Show("Không thể tải thông tin người dùng. Vui lòng đăng nhập lại.", "Lỗi",
                         MessageBoxButton.OK, MessageBoxImage.Error);
-
                     ReturnToLogin();
                 }
             }
             catch (Exception ex)
             {
                 Debug.WriteLine($"[LoadUserInfo] Exception: {ex.Message}");
-                Debug.WriteLine($"[LoadUserInfo] StackTrace: {ex.StackTrace}");
-
                 MessageBox.Show($"Lỗi khi tải thông tin người dùng: {ex.Message}", "Lỗi",
                     MessageBoxButton.OK, MessageBoxImage.Error);
-
                 ReturnToLogin();
             }
         }
@@ -95,7 +99,6 @@ namespace EMS_v1._0Client.Views.General
         {
             Debug.WriteLine($"[ShowRoleSpecificButtons] Processing role: {role}");
 
-            // Hide all role-specific buttons first
             EmployeeManagementButton.Visibility = Visibility.Collapsed;
             SalaryManagementButton.Visibility = Visibility.Collapsed;
             InsuranceManagementButton.Visibility = Visibility.Collapsed;
@@ -128,35 +131,31 @@ namespace EMS_v1._0Client.Views.General
             Close();
         }
 
-        private void ProfileButton_Click(object sender, RoutedEventArgs e)
+        private void ChangePasswordButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Implement Profile Window navigation
-            var profileWindow = new MyProfileWindow(_httpClientFactory);
-            profileWindow.Show();
+            var changePasswordWindow = new ChangePasswordWindow(_httpClientFactory);
+            changePasswordWindow.Show();
             Close();
-        }
-
-        private void EmployeeManagementButton_Click(object sender, RoutedEventArgs e)
-        {
-            // TODO: Implement EmployeeManagementWindow navigation
-            MessageBox.Show("Chuyển đến Quản lý nhân sự (Chưa được triển khai)", "Thông báo");
-        }
-
-        private void SalaryManagementButton_Click(object sender, RoutedEventArgs e)
-        {
-            // TODO: Implement SalaryManagementWindow navigation
-            MessageBox.Show("Chuyển đến Quản lý lương (Chưa được triển khai)", "Thông báo");
-        }
-
-        private void InsuranceManagementButton_Click(object sender, RoutedEventArgs e)
-        {
-            // TODO: Implement InsuranceManagementWindow navigation
-            MessageBox.Show("Chuyển đến Quản lý bảo hiểm (Chưa được triển khai)", "Thông báo");
         }
 
         private void TodolistButton_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Chuyển đến Todolist của tôi (Chưa được triển khai)", "Thông báo");
+        }
+
+        private void EmployeeManagementButton_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Chuyển đến Quản lý nhân sự (Chưa được triển khai)", "Thông báo");
+        }
+
+        private void SalaryManagementButton_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Chuyển đến Quản lý lương (Chưa được triển khai)", "Thông báo");
+        }
+
+        private void InsuranceManagementButton_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Chuyển đến Quản lý bảo hiểm (Chưa được triển khai)", "Thông báo");
         }
 
         private async void LogoutButton_Click(object sender, RoutedEventArgs e)
@@ -184,7 +183,6 @@ namespace EMS_v1._0Client.Views.General
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-            // Dispose the HttpClientFactory to clean up resources
             _httpClientFactory?.Dispose();
         }
     }
