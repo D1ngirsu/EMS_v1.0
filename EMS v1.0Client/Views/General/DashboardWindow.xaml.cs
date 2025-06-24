@@ -10,17 +10,15 @@ namespace EMS_v1._0Client.Views.General
     public partial class DashboardWindow : Window
     {
         private readonly AuthApiService _authService;
+        private readonly IHttpClientFactory _httpClientFactory;
         private UserDto _currentUser;
 
-        public DashboardWindow(AuthApiService authService)
+        public DashboardWindow(IHttpClientFactory httpClientFactory)
         {
             InitializeComponent();
-            _authService = authService; // Sử dụng instance được truyền vào
+            _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+            _authService = new AuthApiService("https://localhost:5105/", _httpClientFactory);
             LoadUserInfo();
-        }
-
-        public DashboardWindow() : this(new AuthApiService("http://localhost:5165")) 
-        {
         }
 
         private async void LoadUserInfo()
@@ -29,7 +27,7 @@ namespace EMS_v1._0Client.Views.General
             {
                 Debug.WriteLine("[LoadUserInfo] Starting to load user info...");
 
-                // Kiểm tra xem có authenticated không trước
+                // Check if authenticated
                 bool isAuthenticated = await _authService.IsAuthenticatedAsync();
                 Debug.WriteLine($"[LoadUserInfo] IsAuthenticated result: {isAuthenticated}");
 
@@ -75,7 +73,7 @@ namespace EMS_v1._0Client.Views.General
                 else
                 {
                     Debug.WriteLine("[LoadUserInfo] _currentUser is null after GetCurrentUserAsync");
-                    MessageBox.Show("Không thể tải thông tin người dùng. Vui lòng đăng nhập lại.", "Lỗi",
+                    MessageBox.Show("Không thể tải thông tin người dùng. Vui lòng đăng nhập lại. ", "Lỗi",
                         MessageBoxButton.OK, MessageBoxImage.Error);
 
                     ReturnToLogin();
@@ -116,17 +114,6 @@ namespace EMS_v1._0Client.Views.General
                     Debug.WriteLine("[ShowRoleSpecificButtons] Showing InsuranceOfficer buttons");
                     InsuranceManagementButton.Visibility = Visibility.Visible;
                     break;
-                //case "Manager":
-                //    Debug.WriteLine("[ShowRoleSpecificButtons] Showing Manager buttons");
-                //    EmployeeManagementButton.Visibility = Visibility.Visible;
-                //    SalaryManagementButton.Visibility = Visibility.Visible;
-                //    break;
-                //case "Admin":
-                //    Debug.WriteLine("[ShowRoleSpecificButtons] Showing Admin buttons");
-                //    EmployeeManagementButton.Visibility = Visibility.Visible;
-                //    SalaryManagementButton.Visibility = Visibility.Visible;
-                //    InsuranceManagementButton.Visibility = Visibility.Visible;
-                //    break;
                 default:
                     Debug.WriteLine($"[ShowRoleSpecificButtons] Unknown role: {role}");
                     break;
@@ -141,13 +128,12 @@ namespace EMS_v1._0Client.Views.General
             Close();
         }
 
-
         private void ProfileButton_Click(object sender, RoutedEventArgs e)
         {
             // TODO: Implement Profile Window navigation
-            //var profileWindow = new MyProfileWindow(_authService);
-            //profileWindow.Show();
-            //Close();
+            // var profileWindow = new MyProfileWindow(_httpClientFactory);
+            // profileWindow.Show();
+            // Close();
         }
 
         private void EmployeeManagementButton_Click(object sender, RoutedEventArgs e)
@@ -198,7 +184,8 @@ namespace EMS_v1._0Client.Views.General
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
+            // Dispose the HttpClientFactory to clean up resources
+            _httpClientFactory?.Dispose();
         }
-
     }
 }

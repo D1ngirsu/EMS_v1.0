@@ -11,23 +11,13 @@ using System.Threading.Tasks;
 public class EmployeeApiService : IDisposable
 {
     private readonly HttpClient _client;
-    private readonly HttpClientHandler _handler;
+    private readonly IHttpClientFactory _httpClientFactory;
     private bool _disposed;
 
-    public EmployeeApiService(string baseUrl, HttpClientHandler handler)
+    public EmployeeApiService(string baseUrl, IHttpClientFactory httpClientFactory)
     {
-        _handler = handler ?? throw new ArgumentNullException(nameof(handler));
-        _client = new HttpClient(_handler)
-        {
-            BaseAddress = new Uri(baseUrl)
-        };
-        // Log cookies during initialization
-        var cookies = _handler.CookieContainer.GetCookies(_client.BaseAddress);
-        Debug.WriteLine($"[EmployeeApiService] Initial Cookie count: {cookies.Count}");
-        foreach (System.Net.Cookie cookie in cookies)
-        {
-            Debug.WriteLine($"[EmployeeApiService] Initial Cookie: {cookie.Name} = {cookie.Value}");
-        }
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _client = httpClientFactory.CreateClient(baseUrl);
     }
 
 
@@ -73,7 +63,7 @@ public class EmployeeApiService : IDisposable
         try
         {
             // Log cookies before request
-            var cookies = _handler.CookieContainer.GetCookies(_client.BaseAddress);
+            var cookies = _httpClientFactory.CookieContainer.GetCookies(_client.BaseAddress);
             Debug.WriteLine($"[GetEmployeeAsync] Cookies count: {cookies.Count}");
             if (cookies.Count == 0)
             {
@@ -136,7 +126,11 @@ public class EmployeeApiService : IDisposable
 
     public void Dispose()
     {
+        if (_disposed)
+            return;
+
         _client?.Dispose();
+        _disposed = true;
     }
 }
 

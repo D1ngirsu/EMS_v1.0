@@ -8,16 +8,13 @@ using System.Collections.Generic;
 public class EmployeeCLService : IDisposable
 {
     private readonly HttpClient _client;
-    private readonly HttpClientHandler _handler;
+    private readonly IHttpClientFactory _httpClientFactory;
+    private bool _disposed;
 
-    public EmployeeCLService(string baseUrl, HttpClientHandler handler)
+    public EmployeeCLService(string baseUrl, IHttpClientFactory httpClientFactory)
     {
-        if (string.IsNullOrEmpty(baseUrl))
-            throw new ArgumentNullException(nameof(baseUrl));
-        if (!baseUrl.EndsWith("/"))
-            baseUrl += "/";
-        _handler = handler ?? throw new ArgumentNullException(nameof(handler));
-        _client = new HttpClient(handler) { BaseAddress = new Uri(baseUrl) };
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _client = httpClientFactory.CreateClient(baseUrl);
     }
 
     public async Task<EmployeeCLListResponse> GetAllAsync(int page = 1, int pageSize = 10)
@@ -94,7 +91,11 @@ public class EmployeeCLService : IDisposable
 
     public void Dispose()
     {
+        if (_disposed)
+            return;
+
         _client?.Dispose();
+        _disposed = true;
     }
 }
 

@@ -8,12 +8,13 @@ namespace EMS_v1._0Client.Views.Auth
     public partial class LoginWindow : Window
     {
         private readonly AuthApiService _authService;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         public LoginWindow()
         {
             InitializeComponent();
-            // Initialize AuthApiService with your API base URL
-            _authService = new AuthApiService("https://localhost:5105");
+            _httpClientFactory = new HttpClientFactory();
+            _authService = new AuthApiService("https://localhost:5105/", _httpClientFactory);
         }
 
         private async void LoginButton_Click(object sender, RoutedEventArgs e)
@@ -41,8 +42,8 @@ namespace EMS_v1._0Client.Views.Auth
 
                 if (response.Success)
                 {
-                    // QUAN TRỌNG: Truyền cùng instance AuthApiService
-                    var dashboardWindow = new DashboardWindow(_authService);
+                    // Pass the same IHttpClientFactory instance to DashboardWindow
+                    var dashboardWindow = new DashboardWindow(_httpClientFactory);
                     dashboardWindow.Show();
                     Close();
                 }
@@ -61,7 +62,6 @@ namespace EMS_v1._0Client.Views.Auth
             }
         }
 
-
         private void CancelButton_Click(object sender, RoutedEventArgs e)
         {
             Close();
@@ -76,7 +76,8 @@ namespace EMS_v1._0Client.Views.Auth
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-            //_authService?.Dispose();
+            // Dispose the HttpClientFactory to clean up resources
+            _httpClientFactory?.Dispose();
         }
     }
 }

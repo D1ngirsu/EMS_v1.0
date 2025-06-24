@@ -8,12 +8,13 @@ namespace EMS_v1._0Client.Views.Auth
     public partial class ChangePasswordWindow : Window
     {
         private readonly AuthApiService _authService;
+        private readonly IHttpClientFactory _httpClientFactory;
 
         public ChangePasswordWindow()
         {
             InitializeComponent();
             // Initialize AuthApiService with your API base URL
-            _authService = new AuthApiService("https://your-api-base-url");
+            _authService = new AuthApiService("http:localhost:5105", _httpClientFactory);
         }
 
         private async void SubmitButton_Click(object sender, RoutedEventArgs e)

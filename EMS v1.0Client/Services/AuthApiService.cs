@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
@@ -8,33 +9,23 @@ using System.Threading.Tasks;
 
 public class AuthApiService : IDisposable
 {
-    private readonly HttpClient _client;
-    private readonly CookieContainer _cookieContainer;
+    private readonly HttpClient _client; 
+    private readonly IHttpClientFactory _httpClientFactory; 
+    private bool _disposed;
 
-    // Thêm property để expose CookieContainer
-    public CookieContainer CookieContainer => _cookieContainer;
+    public CookieContainer CookieContainer => _httpClientFactory.CookieContainer;
 
-    public AuthApiService(string baseUrl)
+    public AuthApiService(string baseUrl, IHttpClientFactory httpClientFactory)
     {
-        _cookieContainer = new CookieContainer();
-        var handler = new HttpClientHandler()
-        {
-            CookieContainer = _cookieContainer,
-            UseCookies = true
-        };
-
-        _client = new HttpClient(handler)
-        {
-            BaseAddress = new Uri(baseUrl)
-        };
+        _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
+        _client = httpClientFactory.CreateClient(baseUrl);
     }
 
-    // Thêm method để tạo HttpClientHandler với cùng CookieContainer
     public HttpClientHandler CreateSharedHandler()
     {
-        return new HttpClientHandler()
+        return new HttpClientHandler
         {
-            CookieContainer = _cookieContainer,
+            CookieContainer = _httpClientFactory.CookieContainer,
             UseCookies = true
         };
     }
@@ -60,8 +51,7 @@ public class AuthApiService : IDisposable
         {
             var response = await _client.PostAsync("api/auth/logout", null);
 
-            // Clear cookies
-            foreach (Cookie cookie in _cookieContainer.GetCookies(_client.BaseAddress))
+            foreach (Cookie cookie in _httpClientFactory.CookieContainer.GetCookies(_client.BaseAddress))
             {
                 cookie.Expired = true;
             }
@@ -78,8 +68,7 @@ public class AuthApiService : IDisposable
     {
         try
         {
-            // Debug: Kiểm tra cookies
-            var cookies = _cookieContainer.GetCookies(_client.BaseAddress);
+            var cookies = _httpClientFactory.CookieContainer.GetCookies(_client.BaseAddress);
             Debug.WriteLine($"[GetCurrentUser] Cookies count: {cookies.Count}");
 
             foreach (Cookie cookie in cookies)
@@ -99,10 +88,8 @@ public class AuthApiService : IDisposable
                 return null;
             }
 
-            // Parse JSON response
             var jsonDoc = JsonDocument.Parse(responseContent);
 
-            // Debug: Check if Success property exists
             if (jsonDoc.RootElement.TryGetProperty("Success", out var successElement))
             {
                 bool success = successElement.GetBoolean();
@@ -132,7 +119,6 @@ public class AuthApiService : IDisposable
                 }
             }
 
-            // Try to get User property (case insensitive)
             JsonElement userElement;
             bool hasUser = jsonDoc.RootElement.TryGetProperty("User", out userElement) ||
                           jsonDoc.RootElement.TryGetProperty("user", out userElement);
@@ -241,18 +227,15 @@ public class AuthApiService : IDisposable
 
     public void Dispose()
     {
+        if (_disposed)
+            return;
+
         _client?.Dispose();
+        _disposed = true;
     }
+
 }
 
-public class ChangePasswordRequest
-{
-    public string CurrentPassword { get; set; }
-    public string NewPassword { get; set; }
-}
+public class ChangePasswordRequest { public string CurrentPassword { get; set; } public string NewPassword { get; set; } }
 
-public class ChangePasswordResponse
-{
-    public bool Success { get; set; }
-    public string Message { get; set; }
-}
+public class ChangePasswordResponse { public bool Success { get; set; } public string Message { get; set; } }
