@@ -84,6 +84,7 @@
                 </Grid.RowDefinitions>
 
                 <!-- Left Column: Current Info -->
+                <!-- Trong StackPanel của Left Column: Current Info -->
                 <StackPanel Orientation="Vertical" Margin="20" Grid.Column="0" Grid.Row="0">
                     <!-- User Info Header with Avatar -->
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,20">
@@ -110,8 +111,12 @@
                         <TextBlock x:Name="RoleTextBlock" FontSize="16"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,10">
-                        <TextBlock Text="Đơn vị:" FontSize="16" FontWeight="Bold" Width="100"/>
+                        <TextBlock Text="Phòng ban:" FontSize="16" FontWeight="Bold" Width="100"/>
                         <TextBlock x:Name="UnitTextBlock" FontSize="16"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,10">
+                        <TextBlock Text="Nhóm:" FontSize="16" FontWeight="Bold" Width="100"/>
+                        <TextBlock x:Name="GroupTextBlock" FontSize="16"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Margin="0,10">
                         <TextBlock Text="Chức vụ:" FontSize="16" FontWeight="Bold" Width="100"/>

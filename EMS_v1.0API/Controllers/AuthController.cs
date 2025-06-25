@@ -20,6 +20,7 @@ public class AuthController : ControllerBase
         var user = await _context.Users
             .Include(u => u.Employee)
                 .ThenInclude(e => e.OrganizationUnit)
+                    .ThenInclude(o => o.Parent)
             .Include(u => u.Employee)
                 .ThenInclude(e => e.Position)
             .FirstOrDefaultAsync(u => u.Username == request.Username);
@@ -76,6 +77,12 @@ public class AuthController : ControllerBase
                     UnitName = user.Employee.OrganizationUnit.UnitName,
                     UnitType = user.Employee.OrganizationUnit.UnitType
                 } : null,
+                ParentOrganizationUnit = user.Employee.OrganizationUnit?.Parent != null ? new OrganizationUnitDto
+                {
+                    UnitId = user.Employee.OrganizationUnit.Parent.UnitId,
+                    UnitName = user.Employee.OrganizationUnit.Parent.UnitName,
+                    UnitType = user.Employee.OrganizationUnit.Parent.UnitType
+                } : null,
                 Position = user.Employee.Position != null ? new PositionDto
                 {
                     PositionId = user.Employee.Position.PositionId,
@@ -118,6 +125,7 @@ public class AuthController : ControllerBase
         // Lấy thông tin nhân viên đầy đủ
         var employee = _context.Employees
             .Include(e => e.OrganizationUnit)
+                .ThenInclude(o => o.Parent)
             .Include(e => e.Position)
             .FirstOrDefault(e => e.Eid == user.Employee.Eid);
 
@@ -143,6 +151,12 @@ public class AuthController : ControllerBase
                     UnitName = employee.OrganizationUnit.UnitName,
                     UnitType = employee.OrganizationUnit.UnitType
                 } : null,
+                ParentOrganizationUnit = employee.OrganizationUnit?.Parent != null ? new OrganizationUnitDto
+                {
+                    UnitId = employee.OrganizationUnit.Parent.UnitId,
+                    UnitName = employee.OrganizationUnit.Parent.UnitName,
+                    UnitType = employee.OrganizationUnit.Parent.UnitType
+                } : null,
                 Position = employee.Position != null ? new PositionDto
                 {
                     PositionId = employee.Position.PositionId,
@@ -157,8 +171,6 @@ public class AuthController : ControllerBase
 
         return Ok(new { Success = true, User = user });
     }
-
-
 
     [HttpGet("organization-units")]
     public async Task<IActionResult> GetOrganizationUnits()

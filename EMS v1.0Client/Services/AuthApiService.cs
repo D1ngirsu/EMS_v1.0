@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 
 public class AuthApiService : IDisposable
 {
-    private readonly HttpClient _client; 
-    private readonly IHttpClientFactory _httpClientFactory; 
+    private readonly HttpClient _client;
+    private readonly IHttpClientFactory _httpClientFactory;
     private bool _disposed;
 
     public CookieContainer CookieContainer => _httpClientFactory.CookieContainer;
@@ -233,7 +233,6 @@ public class AuthApiService : IDisposable
         _client?.Dispose();
         _disposed = true;
     }
-
 }
 
 public class ChangePasswordRequest { public string CurrentPassword { get; set; } public string NewPassword { get; set; } }

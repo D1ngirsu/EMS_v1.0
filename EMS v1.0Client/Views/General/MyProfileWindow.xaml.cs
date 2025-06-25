@@ -52,7 +52,25 @@ namespace EMS_v1._0Client.Views.General
                     UsernameTextBlock.Text = _currentUser.Username ?? "N/A";
                     EmailTextBlock.Text = _currentUser.Employee?.Email ?? "N/A";
                     RoleTextBlock.Text = _currentUser.Role ?? "N/A";
-                    UnitTextBlock.Text = _currentUser.Employee?.OrganizationUnit?.UnitName ?? "N/A";
+
+                    // Handle organization unit and group
+                    if (_currentUser.Employee?.OrganizationUnit != null)
+                    {
+                        Debug.WriteLine($"[LoadUserInfo] UnitType: {_currentUser.Employee.OrganizationUnit.UnitType}");
+                        Debug.WriteLine($"[LoadUserInfo] ParentOrganizationUnit: {_currentUser.Employee.ParentOrganizationUnit?.UnitName ?? "null"}");
+                        if (_currentUser.Employee.OrganizationUnit.UnitType.Equals("Nhom", StringComparison.OrdinalIgnoreCase) &&
+                            _currentUser.Employee.ParentOrganizationUnit != null)
+                        {
+                            UnitTextBlock.Text = _currentUser.Employee.ParentOrganizationUnit.UnitName ?? "N/A";
+                            GroupTextBlock.Text = _currentUser.Employee.OrganizationUnit.UnitName ?? "N/A";
+                        }
+                        else
+                        {
+                            UnitTextBlock.Text = _currentUser.Employee.OrganizationUnit.UnitName ?? "N/A";
+                            GroupTextBlock.Text = "N/A";
+                        }
+                    }
+
                     PositionTextBlock.Text = _currentUser.Employee?.Position?.PositionName ?? "N/A";
                     DateOfBirthTextBlock.Text = _currentUser.Employee?.DoB.ToString("dd/MM/yyyy") ?? "N/A";
                     GenderTextBlock.Text = _currentUser.Employee?.Gender ?? "N/A";
