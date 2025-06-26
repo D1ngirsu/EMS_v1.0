@@ -1,4 +1,5 @@
 ﻿using EMS_v1._0Client.Views.Auth;
+using EMS_v1._0Client.Views.HR;
 using System;
 using System.Diagnostics;
 using System.Windows;
@@ -139,7 +140,9 @@ namespace EMS_v1._0Client.Views.General
         private void EmployeeManagementButton_Click(object sender, RoutedEventArgs e)
         {
             // TODO: Implement EmployeeManagementWindow navigation
-            MessageBox.Show("Chuyển đến Quản lý nhân sự (Chưa được triển khai)", "Thông báo");
+            var employeeListWindow = new EmployeeListWindow(_httpClientFactory);
+            employeeListWindow.Show();
+            Close();
         }
 
         private void SalaryManagementButton_Click(object sender, RoutedEventArgs e)
