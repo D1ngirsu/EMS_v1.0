@@ -115,6 +115,7 @@ public class EmployeeCLListResponse
     public int Page { get; set; }
     public int PageSize { get; set; }
     public int TotalPages { get; set; }
+    public string Message { get; internal set; }
 }
 
 public class EmployeeCLDto

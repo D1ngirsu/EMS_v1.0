@@ -85,6 +85,13 @@
                         <DataGridTextColumn Header="Ngày sinh" Binding="{Binding DoB, StringFormat=d/M/yyyy}" Width="100"/>
                         <DataGridTextColumn Header="Phòng ban trực thuộc" Binding="{Binding Converter={StaticResource ParentUnitConverter}}" Width="150"/>
                         <DataGridTextColumn Header="Chức vụ" Binding="{Binding Position.PositionName}" Width="*"/>
+                        <DataGridTemplateColumn Header="Hành động" Width="100">
+                            <DataGridTemplateColumn.CellTemplate>
+                                <DataTemplate>
+                                    <Button Content="Xem chi tiết" Style="{StaticResource GridButtonStyle}" Click="ViewDetailsButton_Click" Tag="{Binding Eid}"/>
+                                </DataTemplate>
+                            </DataGridTemplateColumn.CellTemplate>
+                        </DataGridTemplateColumn>
                     </DataGrid.Columns>
                 </DataGrid>
 
