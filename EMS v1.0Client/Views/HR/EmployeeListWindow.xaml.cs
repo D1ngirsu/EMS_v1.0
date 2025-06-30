@@ -279,6 +279,12 @@ namespace EMS_v1._0Client.Views.HR
             // Dispose the HttpClientFactory to clean up resources
             _httpClientFactory?.Dispose();
         }
+
+        private void AddEmployeeButton_Click(object sender, RoutedEventArgs e)
+        {
+            //var addEmployeeWindow = new AddEmployeeWindow(_httpClientFactory);
+            //addEmployeeWindow.Show();
+        }
     }
 
     // Converter to display parent unit or direct unit based on ParentOrganizationUnit

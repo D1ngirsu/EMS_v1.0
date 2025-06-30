@@ -94,10 +94,3 @@ public class EmployeeSalaryListResponse
     public int PageSize { get; set; }
     public int TotalPages { get; set; }
 }
-
-public class EmployeeSalaryDto
-{
-    public int Eid { get; set; }
-    public decimal Salary { get; set; }
-    public EmployeeDto Employee { get; set; }
-}
