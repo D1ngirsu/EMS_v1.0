@@ -1,9 +1,11 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
-using System.IO;
+using Microsoft.Extensions.Logging;
 using System;
-using Microsoft.AspNetCore.Http;
+using System.IO;
+using System.Text.Json;
+using System.Threading.Tasks;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -11,6 +13,7 @@ using Microsoft.AspNetCore.Http;
 public class EmployeeController : ControllerBase
 {
     private readonly AppDbContext _context;
+    private readonly ILogger<EmployeeController> _logger;
     private readonly string _imageBasePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "Img", "Employee");
     private readonly string[] _allowedExtensions = { ".jpg", ".jpeg", ".png" };
     private readonly long _maxFileSize = 5 * 1024 * 1024; // 5MB
@@ -44,23 +47,51 @@ public class EmployeeController : ControllerBase
     [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
     public async Task<IActionResult> CreateEmployee([FromForm] Employee employee, IFormFile? image)
     {
+        _logger.LogInformation("CreateEmployee called with employee: {EmployeeName}, Image provided: {ImageProvided}, Image Length: {ImageLength}, Img Path: {ImgPath}",
+            employee.Name, image != null, image?.Length, employee.Img);
+
+        // Loại bỏ yêu cầu bắt buộc cho Img trong ModelState
+        ModelState.Remove("Img");
+
         if (!ModelState.IsValid)
         {
-            return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ", Errors = ModelState });
+            var errors = ModelState.ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToList());
+            _logger.LogWarning("Invalid model state: {Errors}", JsonSerializer.Serialize(errors));
+            return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ", Errors = errors });
         }
 
         // Validate image
         if (image != null && !IsValidImage(image))
         {
+            _logger.LogWarning("Invalid image format or size. File: {FileName}, Size: {FileSize}",
+                image.FileName, image.Length);
             return BadRequest(new { Success = false, Message = "Ảnh không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
         }
 
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // Handle image upload
-            if (image != null)
+            // Handle image upload using provided Img path
+            if (image != null && !string.IsNullOrEmpty(employee.Img))
             {
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", employee.Img.TrimStart('/'));
+                var directory = Path.GetDirectoryName(filePath);
+                if (!Directory.Exists(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await image.CopyToAsync(stream);
+                }
+                _logger.LogInformation("Image uploaded successfully: {FilePath}", employee.Img);
+            }
+            else if (image != null && string.IsNullOrEmpty(employee.Img))
+            {
+                // Fallback in case Img path is not provided
                 var fileExtension = Path.GetExtension(image.FileName);
                 var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
                 var filePath = Path.Combine(_imageBasePath, randomFileName);
@@ -70,6 +101,7 @@ public class EmployeeController : ControllerBase
                     await image.CopyToAsync(stream);
                 }
                 employee.Img = $"/Img/Employee/{randomFileName}";
+                _logger.LogInformation("Image uploaded with fallback path: {FilePath}", employee.Img);
             }
 
             // Initialize collections if null
@@ -84,12 +116,15 @@ public class EmployeeController : ControllerBase
             // Commit transaction
             await transaction.CommitAsync();
 
-            return CreatedAtAction(nameof(GetEmployee), new { eid = employee.Eid },
-                new { Success = true, Data = employee, Message = "Tạo nhân viên thành công" });
+            var response = new { Success = true, Data = employee, Message = "Tạo nhân viên thành công" };
+            _logger.LogInformation("Employee created successfully: {EmployeeId}, Response: {Response}",
+                employee.Eid, JsonSerializer.Serialize(response));
+            return CreatedAtAction(nameof(GetEmployee), new { eid = employee.Eid }, response);
         }
         catch (Exception ex)
         {
             await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error creating employee: {EmployeeName}", employee.Name);
             return BadRequest(new { Success = false, Message = "Lỗi khi tạo nhân viên: " + ex.Message });
         }
     }
@@ -235,12 +270,12 @@ public class EmployeeController : ControllerBase
         }
 
         var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", employee.Img.TrimStart('/'));
-        if (!System.IO.File.Exists(imagePath)) // Fix: Use System.IO.File to check file existence
+        if (!System.IO.File.Exists(imagePath))
         {
             return NotFound(new { Success = false, Message = "Tệp ảnh không tồn tại" });
         }
 
-        var imageBytes = await System.IO.File.ReadAllBytesAsync(imagePath); // Fix: Use System.IO.File for file operations
+        var imageBytes = await System.IO.File.ReadAllBytesAsync(imagePath);
         var extension = Path.GetExtension(imagePath).ToLowerInvariant();
         var contentType = extension switch
         {
@@ -250,7 +285,7 @@ public class EmployeeController : ControllerBase
             _ => "application/octet-stream"
         };
 
-        return File(imageBytes, contentType); // No change needed here
+        return File(imageBytes, contentType);
     }
 
     [HttpPut("{eid}")]
@@ -261,6 +296,9 @@ public class EmployeeController : ControllerBase
         {
             return BadRequest(new { Success = false, Message = "ID không khớp" });
         }
+
+        // Loại bỏ yêu cầu bắt buộc cho Img trong ModelState
+        ModelState.Remove("Img");
 
         if (!ModelState.IsValid)
         {
@@ -273,9 +311,25 @@ public class EmployeeController : ControllerBase
             return BadRequest(new { Success = false, Message = "Ảnh không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
         }
 
-        // Handle image upload
-        if (image != null)
+        // Handle image upload using provided Img path
+        if (image != null && !string.IsNullOrEmpty(employee.Img))
         {
+            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", employee.Img.TrimStart('/'));
+            var directory = Path.GetDirectoryName(filePath);
+            if (!Directory.Exists(directory))
+            {
+                Directory.CreateDirectory(directory);
+            }
+
+            using (var stream = new FileStream(filePath, FileMode.Create))
+            {
+                await image.CopyToAsync(stream);
+            }
+            _logger.LogInformation("Image uploaded successfully: {FilePath}", employee.Img);
+        }
+        else if (image != null && string.IsNullOrEmpty(employee.Img))
+        {
+            // Fallback in case Img path is not provided
             var fileExtension = Path.GetExtension(image.FileName);
             var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
             var filePath = Path.Combine(_imageBasePath, randomFileName);
@@ -285,6 +339,7 @@ public class EmployeeController : ControllerBase
                 await image.CopyToAsync(stream);
             }
             employee.Img = $"/Img/Employee/{randomFileName}";
+            _logger.LogInformation("Image uploaded with fallback path: {FilePath}", employee.Img);
         }
 
         _context.Entry(employee).State = EntityState.Modified;

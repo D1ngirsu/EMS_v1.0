@@ -282,8 +282,8 @@ namespace EMS_v1._0Client.Views.HR
 
         private void AddEmployeeButton_Click(object sender, RoutedEventArgs e)
         {
-            //var addEmployeeWindow = new AddEmployeeWindow(_httpClientFactory);
-            //addEmployeeWindow.Show();
+            var addEmployeeWindow = new AddEmployeeWindow(_httpClientFactory);
+            addEmployeeWindow.Show();
         }
     }
 

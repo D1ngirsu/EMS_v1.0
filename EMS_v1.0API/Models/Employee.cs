@@ -44,7 +44,7 @@ public class Employee
     [StringLength(100)]
     public string Bank { get; set; }
 
-    [StringLength(100)]
+    [StringLength(1000)]
     public string Img { get; set; }
 
     // Navigation properties
