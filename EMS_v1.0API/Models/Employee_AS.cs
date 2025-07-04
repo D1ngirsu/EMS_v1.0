@@ -23,10 +23,10 @@ public class Employee_AS
     public DateTime IssueDay { get; set; }
 
     [StringLength(255)]
-    public string DegreeImg1 { get; set; }
+    public string? DegreeImg1 { get; set; }
 
     [StringLength(255)]
-    public string DegreeImg2 { get; set; }
+    public string? DegreeImg2 { get; set; }
 
     // Navigation property
     [ForeignKey("Eid")]

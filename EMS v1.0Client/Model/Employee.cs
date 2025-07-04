@@ -45,7 +45,7 @@ public class Employee
     public string Bank { get; set; }
 
     [StringLength(1000)]
-    public string Img { get; set; }
+    public string? Img { get; set; }
 
     // Navigation properties
     public User? User { get; set; }

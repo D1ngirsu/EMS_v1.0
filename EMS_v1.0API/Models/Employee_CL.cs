@@ -19,19 +19,19 @@ public class Employee_CL
 
     [Required]
     [StringLength(20)]
-    public string Status { get; set; } // "Hiệu lực" hoặc "Không Hiệu lực"
+    public string? Status { get; set; } // "Hiệu lực" hoặc "Không Hiệu lực"
 
     [Required]
     [StringLength(100)]
-    public string EmployeeUser { get; set; }
+    public string? EmployeeUser { get; set; }
 
     [Required]
     public DateTime SignDate { get; set; }
 
     [StringLength(500)]
-    public string Img { get; set; } // Đường dẫn ảnh hợp đồng lao động
+    public string? Img { get; set; } // Đường dẫn ảnh hợp đồng lao động
 
     // Navigation property
     [ForeignKey("Eid")]
-    public Employee Employee { get; set; }
+    public Employee? Employee { get; set; }
 }

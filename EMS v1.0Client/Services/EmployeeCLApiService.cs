@@ -4,6 +4,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
+using System.IO;
 
 public class EmployeeCLService : IDisposable
 {
@@ -15,6 +17,7 @@ public class EmployeeCLService : IDisposable
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _client = httpClientFactory.CreateClient(baseUrl);
+        _client.BaseAddress = new Uri(baseUrl);
     }
 
     public async Task<EmployeeCLListResponse> GetAllAsync(int page = 1, int pageSize = 10)
@@ -50,32 +53,124 @@ public class EmployeeCLService : IDisposable
         });
     }
 
-    public async Task<EmployeeCLResponse> CreateAsync(EmployeeCLDto employeeCL)
+    public async Task<EmployeeCLResponse> CreateAsync(EmployeeCLDto employeeCL, byte[] imageData = null, string imageFileName = null)
     {
-        var json = JsonSerializer.Serialize(employeeCL);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var content = new MultipartFormDataContent();
 
-        var response = await _client.PostAsync("api/employee-cl", content);
-        var responseJson = await response.Content.ReadAsStringAsync();
-
-        return JsonSerializer.Deserialize<EmployeeCLResponse>(responseJson, new JsonSerializerOptions
+        // Add employeeCL fields
+        content.Add(new StringContent(employeeCL.Cid.ToString()), "Cid");
+        content.Add(new StringContent(employeeCL.Eid.ToString()), "Eid");
+        content.Add(new StringContent(employeeCL.StartDate.ToString("yyyy-MM-dd")), "StartDate");
+        content.Add(new StringContent(employeeCL.EndDate.ToString("yyyy-MM-dd")), "EndDate");
+        if (employeeCL.ExpectedEndDate.HasValue)
         {
-            PropertyNameCaseInsensitive = true
-        });
+            content.Add(new StringContent(employeeCL.ExpectedEndDate.Value.ToString("yyyy-MM-dd")), "ExpectedEndDate");
+        }
+        content.Add(new StringContent(employeeCL.Status ?? ""), "Status");
+        content.Add(new StringContent(employeeCL.EmployeeUser ?? ""), "EmployeeUser");
+        content.Add(new StringContent(employeeCL.SignDate.ToString("yyyy-MM-dd")), "SignDate");
+
+        // Handle image
+        if (imageData != null && imageData.Length > 0 && !string.IsNullOrEmpty(imageFileName))
+        {
+            var imageContent = new ByteArrayContent(imageData);
+            var extension = Path.GetExtension(imageFileName).ToLowerInvariant();
+            var contentType = extension switch
+            {
+                ".png" => "image/png",
+                ".jpg" => "image/jpeg",
+                ".jpeg" => "image/jpeg",
+                _ => "image/jpeg"
+            };
+            imageContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+            content.Add(imageContent, "image", imageFileName);
+            Console.WriteLine($"Image added to request, length: {imageData.Length} bytes, fileName: {imageFileName}");
+        }
+        else
+        {
+            content.Add(new StringContent(""), "Img");
+            Console.WriteLine("No image data provided, Img set to empty");
+        }
+
+        try
+        {
+            var response = await _client.PostAsync("api/employee-cl", content);
+            var responseJson = await response.Content.ReadAsStringAsync();
+
+            return JsonSerializer.Deserialize<EmployeeCLResponse>(responseJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in CreateAsync: {ex.Message}");
+            return new EmployeeCLResponse
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
     }
 
-    public async Task<EmployeeCLResponse> UpdateAsync(int cid, EmployeeCLDto employeeCL)
+    public async Task<EmployeeCLResponse> UpdateAsync(int cid, EmployeeCLDto employeeCL, byte[] imageData = null, string imageFileName = null)
     {
-        var json = JsonSerializer.Serialize(employeeCL);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
+        using var content = new MultipartFormDataContent();
 
-        var response = await _client.PutAsync($"api/employee-cl/{cid}", content);
-        var responseJson = await response.Content.ReadAsStringAsync();
-
-        return JsonSerializer.Deserialize<EmployeeCLResponse>(responseJson, new JsonSerializerOptions
+        // Add employeeCL fields
+        content.Add(new StringContent(employeeCL.Cid.ToString()), "Cid");
+        content.Add(new StringContent(employeeCL.Eid.ToString()), "Eid");
+        content.Add(new StringContent(employeeCL.StartDate.ToString("yyyy-MM-dd")), "StartDate");
+        content.Add(new StringContent(employeeCL.EndDate.ToString("yyyy-MM-dd")), "EndDate");
+        if (employeeCL.ExpectedEndDate.HasValue)
         {
-            PropertyNameCaseInsensitive = true
-        });
+            content.Add(new StringContent(employeeCL.ExpectedEndDate.Value.ToString("yyyy-MM-dd")), "ExpectedEndDate");
+        }
+        content.Add(new StringContent(employeeCL.Status ?? ""), "Status");
+        content.Add(new StringContent(employeeCL.EmployeeUser ?? ""), "EmployeeUser");
+        content.Add(new StringContent(employeeCL.SignDate.ToString("yyyy-MM-dd")), "SignDate");
+
+        // Handle image
+        if (imageData != null && imageData.Length > 0 && !string.IsNullOrEmpty(imageFileName))
+        {
+            var imageContent = new ByteArrayContent(imageData);
+            var extension = Path.GetExtension(imageFileName).ToLowerInvariant();
+            var contentType = extension switch
+            {
+                ".png" => "image/png",
+                ".jpg" => "image/jpeg",
+                ".jpeg" => "image/jpeg",
+                _ => "image/jpeg"
+            };
+            imageContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+            content.Add(imageContent, "image", imageFileName);
+            Console.WriteLine($"Image added to request, length: {imageData.Length} bytes, fileName: {imageFileName}");
+        }
+        else
+        {
+            content.Add(new StringContent(employeeCL.Img ?? ""), "Img");
+            Console.WriteLine($"No new image data provided, Img set to: {employeeCL.Img ?? "null"}");
+        }
+
+        try
+        {
+            var response = await _client.PutAsync($"api/employee-cl/{cid}", content);
+            var responseJson = await response.Content.ReadAsStringAsync();
+
+            return JsonSerializer.Deserialize<EmployeeCLResponse>(responseJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in UpdateAsync: {ex.Message}");
+            return new EmployeeCLResponse
+            {
+                Success = false,
+                Message = ex.Message
+            };
+        }
     }
 
     public async Task<GenericResponse> DeleteAsync(int cid)

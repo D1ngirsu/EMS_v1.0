@@ -23,5 +23,5 @@ public class Employee_CD
 
     // Navigation property
     [ForeignKey("Eid")]
-    public Employee Employee { get; set; }
+    public Employee? Employee { get; set; }
 }

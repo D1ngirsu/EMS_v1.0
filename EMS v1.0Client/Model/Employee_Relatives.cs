@@ -22,9 +22,9 @@ public class Employee_Relatives
     public string RContact { get; set; }
 
     [Required]
-    public byte Type { get; set; } // 0 or 1
+    public byte? Type { get; set; } // 0 or 1
 
     // Navigation property
     [ForeignKey("Eid")]
-    public Employee Employee { get; set; }
+    public Employee? Employee { get; set; }
 }

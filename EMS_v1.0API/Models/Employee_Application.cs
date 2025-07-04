@@ -18,7 +18,7 @@ public class Employee_Application
     public DateTime Date { get; set; }
 
     [StringLength(255)]
-    public string Img { get; set; }
+    public string? Img { get; set; }
 
     [Required]
     [StringLength(50)]

@@ -60,41 +60,42 @@
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="34*"/>
+                        <ColumnDefinition Width="773*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Họ và tên:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="NameTextBox" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="NameTextBox" Margin="0,0,0,5" Grid.ColumnSpan="2"/>
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Ngày sinh:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <DatePicker Grid.Row="1" Grid.Column="1" x:Name="DoBDatePicker" Margin="0,0,0,5"/>
+                    <DatePicker Grid.Row="1" Grid.Column="1" x:Name="DoBDatePicker" Margin="0,0,0,5" Grid.ColumnSpan="2"/>
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="Phòng ban:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <ComboBox Grid.Row="2" Grid.Column="1" x:Name="UnitComboBox" Margin="0,0,0,5" DisplayMemberPath="UnitName"/>
+                    <ComboBox Grid.Row="2" Grid.Column="1" x:Name="UnitComboBox" Margin="0,0,0,5" DisplayMemberPath="UnitName" Grid.ColumnSpan="2"/>
                     <TextBlock Grid.Row="3" Grid.Column="0" Text="Chức vụ:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <ComboBox Grid.Row="3" Grid.Column="1" x:Name="PositionComboBox" Margin="0,0,0,5" DisplayMemberPath="PositionName"/>
+                    <ComboBox Grid.Row="3" Grid.Column="1" x:Name="PositionComboBox" Margin="0,0,0,5" DisplayMemberPath="PositionName" Grid.ColumnSpan="2"/>
                     <TextBlock Grid.Row="4" Grid.Column="0" Text="Email:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBox Grid.Row="4" Grid.Column="1" x:Name="EmailTextBox" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="4" Grid.Column="1" x:Name="EmailTextBox" Margin="0,0,0,5" Grid.ColumnSpan="2"/>
                     <TextBlock Grid.Row="5" Grid.Column="0" Text="Số điện thoại:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBox Grid.Row="5" Grid.Column="1" x:Name="PhoneTextBox" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="5" Grid.Column="1" x:Name="PhoneTextBox" Margin="0,0,0,5" Grid.ColumnSpan="2"/>
                     <TextBlock Grid.Row="6" Grid.Column="0" Text="Địa chỉ:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBox Grid.Row="6" Grid.Column="1" x:Name="AddressTextBox" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="6" Grid.Column="1" x:Name="AddressTextBox" Margin="0,0,0,5" Grid.ColumnSpan="2"/>
                     <TextBlock Grid.Row="7" Grid.Column="0" Text="Giới tính:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <ComboBox Grid.Row="7" Grid.Column="1" x:Name="GenderComboBox" Margin="0,0,0,5">
+                    <ComboBox Grid.Row="7" Grid.Column="1" x:Name="GenderComboBox" Margin="0,0,0,5" Grid.ColumnSpan="2">
                         <ComboBoxItem Content="Nam"/>
                         <ComboBoxItem Content="Nữ"/>
                         <ComboBoxItem Content="Khác"/>
                     </ComboBox>
                     <TextBlock Grid.Row="8" Grid.Column="0" Text="Kinh nghiệm (năm):" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBox Grid.Row="8" Grid.Column="1" x:Name="ExperienceTextBox" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="8" Grid.Column="1" x:Name="ExperienceTextBox" Margin="0,0,0,5" Grid.ColumnSpan="2"/>
                     <TextBlock Grid.Row="9" Grid.Column="0" Text="Số tài khoản ngân hàng:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBox Grid.Row="9" Grid.Column="1" x:Name="BankNumberTextBox" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="9" Grid.Column="1" x:Name="BankNumberTextBox" Margin="0,0,0,5" Grid.ColumnSpan="2"/>
                     <TextBlock Grid.Row="10" Grid.Column="0" Text="Ngân hàng:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBox Grid.Row="10" Grid.Column="1" x:Name="BankTextBox" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="10" Grid.Column="1" x:Name="BankTextBox" Margin="0,0,0,5" Grid.ColumnSpan="2"/>
                     <TextBlock Grid.Row="11" Grid.Column="0" Text="Nguồn:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <ComboBox Grid.Row="11" Grid.Column="1" x:Name="SourceComboBox" Margin="0,0,0,5">
+                    <ComboBox Grid.Row="11" Grid.Column="1" x:Name="SourceComboBox" Margin="0,0,0,5" Grid.ColumnSpan="2">
                         <ComboBoxItem Content="Nội tuyến"/>
                         <ComboBoxItem Content="Ngoại tuyến"/>
                     </ComboBox>
                     <TextBlock Grid.Row="12" Grid.Column="0" Text="Ảnh nhân viên:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <StackPanel Grid.Row="12" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,5">
+                    <StackPanel Grid.Row="12" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,5" Grid.ColumnSpan="2">
                         <Image x:Name="EmployeeAvatar" Style="{StaticResource ImageStyle}"/>
                         <Button x:Name="UploadAvatarButton" Content="Tải ảnh" Style="{StaticResource GridButtonStyle}" Click="UploadAvatarButton_Click"/>
                     </StackPanel>
@@ -120,13 +121,17 @@
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Ngày kết thúc:" FontWeight="Bold" Margin="0,0,10,5"/>
                     <DatePicker Grid.Row="1" Grid.Column="1" x:Name="EndDatePicker" Margin="0,0,0,5"/>
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="Trạng thái:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBox Grid.Row="2" Grid.Column="1" x:Name="ContractStatusTextBox" Margin="0,0,0,5"/>
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Ảnh hợp đồng:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,5">
+                    <ComboBox Grid.Row="2" Grid.Column="1" x:Name="ContractStatusComboBox" Margin="0,0,0,5">
+                        <ComboBoxItem Content="Hiệu lực"/>
+                        <ComboBoxItem Content="Không hiệu lực"/>
+                    </ComboBox>
+                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Ngày ký:" FontWeight="Bold" Margin="0,0,10,5"/>
+                    <DatePicker Grid.Row="3" Grid.Column="1" x:Name="SignDatePicker" Margin="0,0,0,5" IsEnabled="False"/>
+                    <TextBlock Grid.Row="4" Grid.Column="0" Text="Ảnh hợp đồng:" FontWeight="Bold" Margin="0,0,10,5"/>
+                    <StackPanel Grid.Row="4" Grid.Column="1" Orientation="Horizontal" Margin="0,0,0,5">
                         <Image x:Name="ContractImage" Style="{StaticResource ImageStyle}"/>
                         <Button x:Name="UploadContractImageButton" Content="Tải ảnh" Style="{StaticResource GridButtonStyle}" Click="UploadContractImageButton_Click"/>
                     </StackPanel>
-                    
                 </Grid>
             </TabItem>
 

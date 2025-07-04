@@ -18,9 +18,10 @@ public class EmployeeController : ControllerBase
     private readonly string[] _allowedExtensions = { ".jpg", ".jpeg", ".png" };
     private readonly long _maxFileSize = 5 * 1024 * 1024; // 5MB
 
-    public EmployeeController(AppDbContext context)
+    public EmployeeController(AppDbContext context, ILogger<EmployeeController> logger)
     {
         _context = context;
+        _logger = logger;
         // Ensure directory exists
         if (!Directory.Exists(_imageBasePath))
         {
@@ -73,26 +74,10 @@ public class EmployeeController : ControllerBase
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // Handle image upload using provided Img path
-            if (image != null && !string.IsNullOrEmpty(employee.Img))
+            // Handle image upload
+            if (image != null)
             {
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", employee.Img.TrimStart('/'));
-                var directory = Path.GetDirectoryName(filePath);
-                if (!Directory.Exists(directory))
-                {
-                    Directory.CreateDirectory(directory);
-                }
-
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await image.CopyToAsync(stream);
-                }
-                _logger.LogInformation("Image uploaded successfully: {FilePath}", employee.Img);
-            }
-            else if (image != null && string.IsNullOrEmpty(employee.Img))
-            {
-                // Fallback in case Img path is not provided
-                var fileExtension = Path.GetExtension(image.FileName);
+                var fileExtension = Path.GetExtension(image.FileName).ToLowerInvariant();
                 var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
                 var filePath = Path.Combine(_imageBasePath, randomFileName);
 
@@ -101,7 +86,12 @@ public class EmployeeController : ControllerBase
                     await image.CopyToAsync(stream);
                 }
                 employee.Img = $"/Img/Employee/{randomFileName}";
-                _logger.LogInformation("Image uploaded with fallback path: {FilePath}", employee.Img);
+                _logger.LogInformation("Image uploaded successfully: {FilePath}", employee.Img);
+            }
+            else
+            {
+                employee.Img = null; // Ensure Img is null if no image is provided
+                _logger.LogInformation("No image provided for employee: {EmployeeName}", employee.Name);
             }
 
             // Initialize collections if null
@@ -302,63 +292,73 @@ public class EmployeeController : ControllerBase
 
         if (!ModelState.IsValid)
         {
-            return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ", Errors = ModelState });
+            var errors = ModelState.ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToList());
+            _logger.LogWarning("Invalid model state: {Errors}", JsonSerializer.Serialize(errors));
+            return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ", Errors = errors });
         }
 
         // Validate image
         if (image != null && !IsValidImage(image))
         {
+            _logger.LogWarning("Invalid image format or size. File: {FileName}, Size: {FileSize}",
+                image.FileName, image.Length);
             return BadRequest(new { Success = false, Message = "Ảnh không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
         }
 
-        // Handle image upload using provided Img path
-        if (image != null && !string.IsNullOrEmpty(employee.Img))
-        {
-            var filePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", employee.Img.TrimStart('/'));
-            var directory = Path.GetDirectoryName(filePath);
-            if (!Directory.Exists(directory))
-            {
-                Directory.CreateDirectory(directory);
-            }
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await image.CopyToAsync(stream);
-            }
-            _logger.LogInformation("Image uploaded successfully: {FilePath}", employee.Img);
-        }
-        else if (image != null && string.IsNullOrEmpty(employee.Img))
-        {
-            // Fallback in case Img path is not provided
-            var fileExtension = Path.GetExtension(image.FileName);
-            var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
-            var filePath = Path.Combine(_imageBasePath, randomFileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await image.CopyToAsync(stream);
-            }
-            employee.Img = $"/Img/Employee/{randomFileName}";
-            _logger.LogInformation("Image uploaded with fallback path: {FilePath}", employee.Img);
-        }
-
-        _context.Entry(employee).State = EntityState.Modified;
-
+        using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            await _context.SaveChangesAsync();
-            return Ok(new { Success = true, Data = employee, Message = "Cập nhật nhân viên thành công" });
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!await _context.Employees.AnyAsync(e => e.Eid == eid))
+            // Fetch existing employee
+            var existingEmployee = await _context.Employees.FindAsync(eid);
+            if (existingEmployee == null)
             {
                 return NotFound(new { Success = false, Message = "Không tìm thấy nhân viên" });
             }
-            throw;
+
+            // Handle image upload
+            if (image != null)
+            {
+                // Delete old image if it exists
+                if (!string.IsNullOrEmpty(existingEmployee.Img))
+                {
+                    var oldImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", existingEmployee.Img.TrimStart('/'));
+                    if (System.IO.File.Exists(oldImagePath))
+                    {
+                        System.IO.File.Delete(oldImagePath);
+                    }
+                }
+
+                var fileExtension = Path.GetExtension(image.FileName).ToLowerInvariant();
+                var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
+                var filePath = Path.Combine(_imageBasePath, randomFileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await image.CopyToAsync(stream);
+                }
+                employee.Img = $"/Img/Employee/{randomFileName}";
+                _logger.LogInformation("Image uploaded successfully: {FilePath}", employee.Img);
+            }
+            else
+            {
+                // Keep existing image path if no new image is provided
+                employee.Img = existingEmployee.Img;
+            }
+
+            // Update employee properties
+            _context.Entry(existingEmployee).CurrentValues.SetValues(employee);
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+
+            return Ok(new { Success = true, Data = employee, Message = "Cập nhật nhân viên thành công" });
         }
         catch (Exception ex)
         {
+            await transaction.RollbackAsync();
+            _logger.LogError(ex, "Error updating employee: {EmployeeName}", employee.Name);
             return BadRequest(new { Success = false, Message = "Lỗi khi cập nhật: " + ex.Message });
         }
     }

@@ -18,11 +18,11 @@ public class Employee_Application
     public DateTime Date { get; set; }
 
     [StringLength(255)]
-    public string Img { get; set; }
+    public string? Img { get; set; }
 
     [Required]
     [StringLength(50)]
-    public string ApplicationType { get; set; } // xác nhận, đơn, hợp đồng lao động
+    public string? ApplicationType { get; set; } // xác nhận, đơn, hợp đồng lao động
 
     // Navigation property
     [ForeignKey("Eid")]

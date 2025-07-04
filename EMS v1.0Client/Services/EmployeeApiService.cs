@@ -19,13 +19,14 @@ public class EmployeeApiService : IDisposable
     {
         _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
         _client = httpClientFactory.CreateClient(baseUrl);
+        _client.BaseAddress = new Uri(baseUrl);
     }
 
     public async Task<EmployeeResponse> CreateEmployeeAsync(Employee employee, byte[] imageData = null, string imageFileName = null)
     {
         using var content = new MultipartFormDataContent();
 
-        // Thêm các trường của Employee
+        // Add employee fields
         content.Add(new StringContent(employee.Name ?? ""), "Name");
         content.Add(new StringContent(employee.DoB.ToString("yyyy-MM-dd")), "DoB");
         content.Add(new StringContent(employee.UnitId.ToString()), "UnitId");
@@ -39,41 +40,26 @@ public class EmployeeApiService : IDisposable
         content.Add(new StringContent(employee.Bank ?? ""), "Bank");
         content.Add(new StringContent(employee.Source ?? ""), "Source");
 
-        // Thêm image nếu có và tạo đường dẫn ảnh, nếu không thì giữ Img là null hoặc rỗng
-        if (imageData != null && imageData.Length > 0)
+        // Handle image
+        if (imageData != null && imageData.Length > 0 && !string.IsNullOrEmpty(imageFileName))
         {
             var imageContent = new ByteArrayContent(imageData);
-
-            // Xác định content type dựa trên extension
-            string contentType = "image/jpeg"; // default
-            string fileName = imageFileName ?? $"avatar_{Guid.NewGuid()}.jpg";
-
-            if (!string.IsNullOrEmpty(imageFileName))
+            var extension = Path.GetExtension(imageFileName).ToLowerInvariant();
+            var contentType = extension switch
             {
-                var extension = Path.GetExtension(imageFileName).ToLowerInvariant();
-                contentType = extension switch
-                {
-                    ".png" => "image/png",
-                    ".jpg" => "image/jpeg",
-                    ".jpeg" => "image/jpeg",
-                    _ => "image/jpeg"
-                };
-            }
-
+                ".png" => "image/png",
+                ".jpg" => "image/jpeg",
+                ".jpeg" => "image/jpeg",
+                _ => "image/jpeg"
+            };
             imageContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
-
-            // Tạo đường dẫn ảnh và gán vào employee.Img
-            string randomFileName = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
-            employee.Img = $"/Img/Employee/{randomFileName}";
-            content.Add(imageContent, "image", randomFileName);
-            Console.WriteLine($"Image added to request, length: {imageData.Length} bytes, fileName: {randomFileName}, Img path: {employee.Img}");
+            content.Add(imageContent, "image", imageFileName);
+            Console.WriteLine($"Image added to request, length: {imageData.Length} bytes, fileName: {imageFileName}");
         }
         else
         {
-            // Nếu không có ảnh, gửi Img là null hoặc rỗng
-            employee.Img = employee.Img ?? ""; // Đảm bảo Img không null nếu đã có giá trị
-            content.Add(new StringContent(employee.Img ?? ""), "Img");
-            Console.WriteLine("No image data provided, Img set to: " + (employee.Img ?? "null"));
+            content.Add(new StringContent(""), "Img");
+            Console.WriteLine("No image data provided, Img set to empty");
         }
 
         try
@@ -100,11 +86,12 @@ public class EmployeeApiService : IDisposable
         }
     }
 
-    public async Task<EmployeeResponse> UpdateEmployeeAsync(int eid, Employee employee, byte[] imageData, string imageFileName)
+    public async Task<EmployeeResponse> UpdateEmployeeAsync(int eid, Employee employee, byte[] imageData = null, string imageFileName = null)
     {
         using var content = new MultipartFormDataContent();
 
-        // Thêm các trường của Employee
+        // Add employee fields
+        content.Add(new StringContent(employee.Eid.ToString()), "Eid");
         content.Add(new StringContent(employee.Name ?? ""), "Name");
         content.Add(new StringContent(employee.DoB.ToString("yyyy-MM-dd")), "DoB");
         content.Add(new StringContent(employee.UnitId.ToString()), "UnitId");
@@ -117,46 +104,36 @@ public class EmployeeApiService : IDisposable
         content.Add(new StringContent(employee.BankNumber ?? ""), "BankNumber");
         content.Add(new StringContent(employee.Bank ?? ""), "Bank");
         content.Add(new StringContent(employee.Source ?? ""), "Source");
-        content.Add(new StringContent(employee.Eid.ToString()), "Eid");
 
-        // Thêm image nếu có và tạo đường dẫn ảnh, nếu không thì giữ Img là null hoặc rỗng
-        if (imageData != null && imageData.Length > 0)
+        // Handle image
+        if (imageData != null && imageData.Length > 0 && !string.IsNullOrEmpty(imageFileName))
         {
             var imageContent = new ByteArrayContent(imageData);
-
-            string contentType = "image/jpeg"; // default
-            string fileName = imageFileName ?? $"avatar_{Guid.NewGuid()}.jpg";
-
-            if (!string.IsNullOrEmpty(imageFileName))
+            var extension = Path.GetExtension(imageFileName).ToLowerInvariant();
+            var contentType = extension switch
             {
-                var extension = Path.GetExtension(imageFileName).ToLowerInvariant();
-                contentType = extension switch
-                {
-                    ".png" => "image/png",
-                    ".jpg" => "image/jpeg",
-                    ".jpeg" => "image/jpeg",
-                    _ => "image/jpeg"
-                };
-            }
-
+                ".png" => "image/png",
+                ".jpg" => "image/jpeg",
+                ".jpeg" => "image/jpeg",
+                _ => "image/jpeg"
+            };
             imageContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
-            string randomFileName = $"{Guid.NewGuid()}{Path.GetExtension(fileName)}";
-            employee.Img = $"/Img/Employee/{randomFileName}";
-            content.Add(imageContent, "image", randomFileName);
-            Console.WriteLine($"Image added to request, length: {imageData.Length} bytes, fileName: {randomFileName}, Img path: {employee.Img}");
+            content.Add(imageContent, "image", imageFileName);
+            Console.WriteLine($"Image added to request, length: {imageData.Length} bytes, fileName: {imageFileName}");
         }
         else
         {
-            // Nếu không có ảnh, gửi Img là null hoặc rỗng
-            employee.Img = employee.Img ?? ""; // Đảm bảo Img không null nếu đã có giá trị
             content.Add(new StringContent(employee.Img ?? ""), "Img");
-            Console.WriteLine("No image data provided, Img set to: " + (employee.Img ?? "null"));
+            Console.WriteLine($"No new image data provided, Img set to: {employee.Img ?? "null"}");
         }
 
         try
         {
             var response = await _client.PutAsync($"api/employee/{eid}", content);
             var responseJson = await response.Content.ReadAsStringAsync();
+
+            Console.WriteLine($"Response Status: {response.StatusCode}");
+            Console.WriteLine($"Response Content: {responseJson}");
 
             return JsonSerializer.Deserialize<EmployeeResponse>(responseJson, new JsonSerializerOptions
             {
@@ -165,6 +142,7 @@ public class EmployeeApiService : IDisposable
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"Error in UpdateEmployeeAsync: {ex.Message}");
             return new EmployeeResponse
             {
                 Success = false,

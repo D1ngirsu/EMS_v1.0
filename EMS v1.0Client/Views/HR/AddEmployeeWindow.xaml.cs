@@ -22,8 +22,9 @@ namespace EMS_v1._0Client.Views.HR
         private readonly OrganizationApiService _orgService;
         private readonly IHttpClientFactory _httpClientFactory;
         private byte[] _avatarImageData;
-        private string _avatarImageFileName; // Thêm để lưu tên file
+        private string _avatarImageFileName;
         private byte[] _contractImageData;
+        private string _contractImageFileName; // Thêm để lưu tên file hợp đồng
         private byte[] _degreeImg1Data;
         private byte[] _degreeImg2Data;
         private List<EmployeeRelativesDto> _relatives = new List<EmployeeRelativesDto>();
@@ -40,6 +41,8 @@ namespace EMS_v1._0Client.Views.HR
             _orgService = new OrganizationApiService("https://localhost:5105/", _httpClientFactory);
             LoadDepartmentsAndPositions();
             RelativesDataGrid.ItemsSource = _relatives;
+            // Set default value for SignDatePicker
+            SignDatePicker.SelectedDate = DateTime.Now;
         }
 
         private async void LoadDepartmentsAndPositions()
@@ -74,6 +77,14 @@ namespace EMS_v1._0Client.Views.HR
             }
         }
 
+        // Giả lập phương thức lấy tên người dùng hiện tại
+        private string GetCurrentUserName()
+        {
+            // TODO: Thay bằng logic thực tế để lấy tên người dùng đang đăng nhập
+            // Ví dụ: return User.Identity.Name; hoặc thông qua một IUserService
+            return System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+        }
+
         private async void SaveEmployeeButton_Click(object sender, RoutedEventArgs e)
         {
             try
@@ -104,19 +115,9 @@ namespace EMS_v1._0Client.Views.HR
                     BankNumber = BankNumberTextBox.Text,
                     Bank = BankTextBox.Text,
                     Source = (SourceComboBox.SelectedItem as ComboBoxItem)?.Content.ToString()
-                    // Img will be handled by the server if _avatarImageData is provided
                 };
 
-                // QUAN TRỌNG: Pass cả imageData và imageFileName
                 var employeeResponse = await _employeeService.CreateEmployeeAsync(employee, _avatarImageData, _avatarImageFileName);
-
-                // Debug information
-                Console.WriteLine($"Employee Response Success: {employeeResponse.Success}");
-                Console.WriteLine($"Employee Response Message: {employeeResponse.Message}");
-                if (employeeResponse.Errors != null)
-                {
-                    Console.WriteLine($"Employee Response Errors: {JsonSerializer.Serialize(employeeResponse.Errors)}");
-                }
 
                 if (!employeeResponse.Success)
                 {
@@ -137,20 +138,28 @@ namespace EMS_v1._0Client.Views.HR
 
                 int eid = employeeResponse.Data.Eid;
 
+                // Gán Eid cho tất cả người thân trước khi tạo
+                foreach (var relative in _relatives)
+                {
+                    relative.Eid = eid;
+                }
+
                 // Create Labor Contract
-                if (StartDatePicker.SelectedDate != null)
+                if (StartDatePicker.SelectedDate != null && EndDatePicker.SelectedDate != null && ContractStatusComboBox.SelectedItem != null)
                 {
                     var contract = new EmployeeCLDto
                     {
                         Eid = eid,
                         StartDate = StartDatePicker.SelectedDate.Value,
                         EndDate = EndDatePicker.SelectedDate.Value,
-                        Status = ContractStatusTextBox.Text
+                        Status = (ContractStatusComboBox.SelectedItem as ComboBoxItem)?.Content.ToString(),
+                        EmployeeUser = "VTB",
+                        SignDate = SignDatePicker.SelectedDate ?? DateTime.Now
                     };
-                    var clResponse = await _clService.CreateAsync(contract);
+                    var clResponse = await _clService.CreateAsync(contract, _contractImageData, _contractImageFileName);
                     if (!clResponse.Success)
                     {
-                        MessageBox.Show($"Lỗi khi tạo hợp đồng: {clResponse.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show($"Lỗi khi tạo hợp đồng: {clResponse.Errors}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
 
@@ -168,7 +177,7 @@ namespace EMS_v1._0Client.Views.HR
                     var cdResponse = await _cdService.CreateAsync(cd);
                     if (!cdResponse.Success)
                     {
-                        MessageBox.Show($"Lỗi khi tạo thông tin xác nhận: {cdResponse.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show($"Lỗi khi tạo thông tin xác nhận: {cdResponse.Errors}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
 
@@ -186,18 +195,17 @@ namespace EMS_v1._0Client.Views.HR
                     var asResponse = await _asService.CreateAsync(asData, _degreeImg1Data, _degreeImg2Data);
                     if (!asResponse.Success)
                     {
-                        MessageBox.Show($"Lỗi khi tạo trình độ học vấn: {asResponse.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show($"Lỗi khi tạo trình độ học vấn: {asResponse.Errors}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
 
                 // Create Relatives
                 foreach (var relative in _relatives)
                 {
-                    relative.Eid = eid;
                     var relResponse = await _relativesService.CreateAsync(relative);
                     if (!relResponse.Success)
                     {
-                        MessageBox.Show($"Lỗi khi tạo người thân: {relResponse.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                        MessageBox.Show($"Lỗi khi tạo người thân: {relResponse.Errors}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
 
@@ -221,7 +229,7 @@ namespace EMS_v1._0Client.Views.HR
                 try
                 {
                     _avatarImageData = File.ReadAllBytes(openFileDialog.FileName);
-                    _avatarImageFileName = Path.GetFileName(openFileDialog.FileName); // Lưu tên file
+                    _avatarImageFileName = Path.GetFileName(openFileDialog.FileName);
 
                     if (_avatarImageData == null || _avatarImageData.Length == 0)
                     {
@@ -247,8 +255,24 @@ namespace EMS_v1._0Client.Views.HR
             };
             if (openFileDialog.ShowDialog() == true)
             {
-                _contractImageData = File.ReadAllBytes(openFileDialog.FileName);
-                ContractImage.Source = new BitmapImage(new Uri(openFileDialog.FileName));
+                try
+                {
+                    _contractImageData = File.ReadAllBytes(openFileDialog.FileName);
+                    _contractImageFileName = Path.GetFileName(openFileDialog.FileName);
+
+                    if (_contractImageData == null || _contractImageData.Length == 0)
+                    {
+                        MessageBox.Show("Không thể đọc dữ liệu ảnh hợp đồng. Vui lòng chọn lại file.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+
+                    Console.WriteLine($"Contract image loaded: {_contractImageFileName}, Size: {_contractImageData.Length} bytes");
+                    ContractImage.Source = new BitmapImage(new Uri(openFileDialog.FileName));
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi khi đọc file ảnh hợp đồng: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 

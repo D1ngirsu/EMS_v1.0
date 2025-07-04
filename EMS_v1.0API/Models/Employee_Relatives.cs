@@ -26,5 +26,5 @@ public class Employee_Relatives
 
     // Navigation property
     [ForeignKey("Eid")]
-    public Employee Employee { get; set; }
+    public Employee? Employee { get; set; }
 }
