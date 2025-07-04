@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 public class Employee_Relatives
 {
     [Key]
-    public int RelId { get; set; }
+    public int? RelId { get; set; }
 
     [Required]
     public int Eid { get; set; } // Changed from Uid to Eid

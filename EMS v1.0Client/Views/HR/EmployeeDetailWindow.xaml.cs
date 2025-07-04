@@ -4,6 +4,7 @@ using System.Globalization;
 using System.Net.Http;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
 namespace EMS_v1._0Client.Views.HR
@@ -75,14 +76,14 @@ namespace EMS_v1._0Client.Views.HR
                         {
                             EmployeeAvatar.Source = new BitmapImage(uri);
                         }
-                        else if (Uri.TryCreate(new Uri("https://localhost:5105/"), employee.Img, out uri)) // Convert relative to absolute
+                        else if (Uri.TryCreate(new Uri("https://localhost:5105/"), employee.Img, out uri))
                         {
                             EmployeeAvatar.Source = new BitmapImage(uri);
                         }
                         else
                         {
                             Debug.WriteLine($"Invalid URI for employee image: {employee.Img}");
-                            EmployeeAvatar.Source = null; // Fallback to no image
+                            EmployeeAvatar.Source = null;
                         }
                     }
                     else
@@ -249,17 +250,37 @@ namespace EMS_v1._0Client.Views.HR
             try
             {
                 var response = await _clService.GetByEidAsync(_eid, 1, int.MaxValue);
-                if (response.Success)
+                if (response.Success && response.Data != null)
                 {
+                    foreach (var contract in response.Data)
+                    {
+                        if (!string.IsNullOrEmpty(contract.Img))
+                        {
+                            if (!Uri.TryCreate(contract.Img, UriKind.Absolute, out Uri uri))
+                            {
+                                if (Uri.TryCreate(new Uri("https://localhost:5105/"), contract.Img, out uri))
+                                {
+                                    contract.Img = uri.ToString();
+                                }
+                                else
+                                {
+                                    Debug.WriteLine($"Invalid URI for contract image: {contract.Img}");
+                                    contract.Img = null;
+                                }
+                            }
+                        }
+                    }
                     ContractsDataGrid.ItemsSource = response.Data;
                 }
                 else
                 {
+                    ContractsDataGrid.ItemsSource = null;
                     //MessageBox.Show(response.Message, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
             {
+                Debug.WriteLine($"Error loading contracts: {ex.Message}");
                 MessageBox.Show($"Lỗi khi tải hợp đồng lao động: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -361,6 +382,26 @@ namespace EMS_v1._0Client.Views.HR
         {
             _todoCurrentPage = _todoTotalPages;
             LoadTodolist();
+        }
+
+        private void ContractImage_Click(object sender, MouseButtonEventArgs e)
+        {
+            if (sender is Image image && image.DataContext is EmployeeCLDto contract)
+            {
+                if (!string.IsNullOrEmpty(contract.Img))
+                {
+                    try
+                    {
+                        var enlargedImageWindow = new EnlargedImageWindow(contract.Img);
+                        enlargedImageWindow.ShowDialog();
+                    }
+                    catch (Exception ex)
+                    {
+                        Debug.WriteLine($"Error opening enlarged image: {ex.Message}");
+                        MessageBox.Show($"Lỗi khi mở ảnh lớn: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+            }
         }
     }
 }

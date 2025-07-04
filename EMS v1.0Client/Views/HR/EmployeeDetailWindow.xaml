@@ -206,7 +206,7 @@
                         <DataGridTemplateColumn Header="Ảnh" Width="60">
                             <DataGridTemplateColumn.CellTemplate>
                                 <DataTemplate>
-                                    <Image Source="{Binding Img}" Style="{StaticResource ImageStyle}"/>
+                                    <Image Source="{Binding Img}" Style="{StaticResource ImageStyle}" MouseLeftButtonUp="ContractImage_Click"/>
                                 </DataTemplate>
                             </DataGridTemplateColumn.CellTemplate>
                         </DataGridTemplateColumn>
@@ -236,7 +236,7 @@
                         <Button x:Name="TodoFirstPageButton" Content="Đầu" Style="{StaticResource GridButtonStyle}" Click="TodoFirstPageButton_Click"/>
                         <Button x:Name="TodoPreviousPageButton" Content="Trước" Style="{StaticResource GridButtonStyle}" Click="TodoPreviousPageButton_Click"/>
                         <TextBlock x:Name="TodoPageInfoTextBlock" VerticalAlignment="Center" Margin="10,0" Text="Trang 1 / 1"/>
-                        <Button x:Name="TodoNextPageButton" Content="Sau" Style="{StaticResource GridButtonStyle}" Click="TodoNextPageButton_Click"></Button>
+                        <Button x:Name="TodoNextPageButton" Content="Sau" Style="{StaticResource GridButtonStyle}" Click="TodoNextPageButton_Click"/>
                         <Button x:Name="TodoLastPageButton" Content="Cuối" Style="{StaticResource GridButtonStyle}" Click="TodoLastPageButton_Click"/>
                     </StackPanel>
                 </Grid>

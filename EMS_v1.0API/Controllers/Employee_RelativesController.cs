@@ -1,7 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading.Tasks;
 
-// Employee_Relatives Controller
 [ApiController]
 [Route("api/employee-relatives")]
 [SessionAuthorize]
@@ -17,9 +18,7 @@ public class EmployeeRelativesController : ControllerBase
     [HttpGet]
     public async Task<IActionResult> GetAll([FromQuery] int? eid, [FromQuery] int page = 1, [FromQuery] int pageSize = 10)
     {
-        var query = _context.Employee_Relatives
-            .Include(e => e.Employee)
-            .AsQueryable();
+        var query = _context.Employee_Relatives.AsQueryable();
 
         if (eid.HasValue)
         {
@@ -30,6 +29,14 @@ public class EmployeeRelativesController : ControllerBase
         var relatives = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(e => new EmployeeRelativesDto
+            {
+                RelId = e.RelId,
+                Eid = e.Eid,
+                RName = e.RName,
+                RRelativity = e.RRelativity,
+                RContact = e.RContact
+            })
             .ToListAsync();
 
         return Ok(new
@@ -47,7 +54,14 @@ public class EmployeeRelativesController : ControllerBase
     public async Task<IActionResult> GetById(int relId)
     {
         var relative = await _context.Employee_Relatives
-            .Include(e => e.Employee)
+            .Select(e => new EmployeeRelativesDto
+            {
+                RelId = e.RelId,
+                Eid = e.Eid,
+                RName = e.RName,
+                RRelativity = e.RRelativity,
+                RContact = e.RContact
+            })
             .FirstOrDefaultAsync(e => e.RelId == relId);
 
         if (relative == null)
@@ -63,13 +77,20 @@ public class EmployeeRelativesController : ControllerBase
     {
         var query = _context.Employee_Relatives
             .Where(e => e.Eid == eid)
-            .Include(e => e.Employee)
             .AsQueryable();
 
         var totalCount = await query.CountAsync();
         var relatives = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(e => new EmployeeRelativesDto
+            {
+                RelId = e.RelId,
+                Eid = e.Eid,
+                RName = e.RName,
+                RRelativity = e.RRelativity,
+                RContact = e.RContact
+            })
             .ToListAsync();
 
         if (relatives == null || !relatives.Any())
@@ -89,7 +110,7 @@ public class EmployeeRelativesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create([FromBody] Employee_Relatives relative)
+    public async Task<IActionResult> Create([FromBody] EmployeeRelativesDto relative)
     {
         if (!ModelState.IsValid)
         {
@@ -98,9 +119,17 @@ public class EmployeeRelativesController : ControllerBase
 
         try
         {
-            _context.Employee_Relatives.Add(relative);
+            var entity = new Employee_Relatives
+            {
+                Eid = relative.Eid,
+                RName = relative.RName,
+                RRelativity = relative.RRelativity,
+                RContact = relative.RContact
+            };
+            _context.Employee_Relatives.Add(entity);
             await _context.SaveChangesAsync();
 
+            relative.RelId = entity.RelId; // Update DTO with the generated ID
             return CreatedAtAction(nameof(GetById), new { relId = relative.RelId },
                 new { Success = true, Data = relative, Message = "Tạo thông tin người thân thành công" });
         }
@@ -111,7 +140,7 @@ public class EmployeeRelativesController : ControllerBase
     }
 
     [HttpPut("{relId}")]
-    public async Task<IActionResult> Update(int relId, [FromBody] Employee_Relatives relative)
+    public async Task<IActionResult> Update(int relId, [FromBody] EmployeeRelativesDto relative)
     {
         if (relId != relative.RelId)
         {
@@ -123,10 +152,20 @@ public class EmployeeRelativesController : ControllerBase
             return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ", Errors = ModelState });
         }
 
-        _context.Entry(relative).State = EntityState.Modified;
+        var entity = await _context.Employee_Relatives.FindAsync(relId);
+        if (entity == null)
+        {
+            return NotFound(new { Success = false, Message = "Không tìm thấy thông tin người thân" });
+        }
 
         try
         {
+            entity.Eid = relative.Eid;
+            entity.RName = relative.RName;
+            entity.RRelativity = relative.RRelativity;
+            entity.RContact = relative.RContact;
+
+            _context.Entry(entity).State = EntityState.Modified;
             await _context.SaveChangesAsync();
             return Ok(new { Success = true, Data = relative, Message = "Cập nhật thông tin người thân thành công" });
         }

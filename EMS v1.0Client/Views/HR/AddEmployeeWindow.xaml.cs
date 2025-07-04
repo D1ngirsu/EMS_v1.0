@@ -24,7 +24,7 @@ namespace EMS_v1._0Client.Views.HR
         private byte[] _avatarImageData;
         private string _avatarImageFileName;
         private byte[] _contractImageData;
-        private string _contractImageFileName; // Thêm để lưu tên file hợp đồng
+        private string _contractImageFileName;
         private byte[] _degreeImg1Data;
         private byte[] _degreeImg2Data;
         private List<EmployeeRelativesDto> _relatives = new List<EmployeeRelativesDto>();
@@ -80,8 +80,6 @@ namespace EMS_v1._0Client.Views.HR
         // Giả lập phương thức lấy tên người dùng hiện tại
         private string GetCurrentUserName()
         {
-            // TODO: Thay bằng logic thực tế để lấy tên người dùng đang đăng nhập
-            // Ví dụ: return User.Identity.Name; hoặc thông qua một IUserService
             return System.Security.Principal.WindowsIdentity.GetCurrent().Name;
         }
 
@@ -312,9 +310,11 @@ namespace EMS_v1._0Client.Views.HR
 
             var relative = new EmployeeRelativesDto
             {
+                
                 RName = RelativeNameTextBox.Text,
                 RRelativity = RelativeRelationTextBox.Text,
-                RContact = RelativeContactTextBox.Text
+                RContact = RelativeContactTextBox.Text,
+                Type = byte.Parse((RelativeTypeComboBox.SelectedItem as ComboBoxItem)?.Tag.ToString() ?? "0")
             };
 
             _relatives.Add(relative);

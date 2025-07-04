@@ -54,6 +54,11 @@ public class AppDbContext : DbContext
             .HasIndex(p => p.PositionName)
             .IsUnique();
 
+        // Employee_Relatives configuration
+        modelBuilder.Entity<Employee_Relatives>()
+            .Property(e => e.RelId)
+            .ValueGeneratedOnAdd(); // Cấu hình RelId tự tăng
+
         // Check constraints
         modelBuilder.Entity<OrganizationUnit>()
             .ToTable(t => t.HasCheckConstraint("CK_OrganizationUnit_UnitType",

@@ -50,10 +50,25 @@ public class EmployeeRelativesService : IDisposable
         var response = await _client.GetAsync($"api/employee-relatives/by-employee/{eid}?page={page}&pageSize={pageSize}");
         var responseJson = await response.Content.ReadAsStringAsync();
 
-        return JsonSerializer.Deserialize<EmployeeRelativesListResponse>(responseJson, new JsonSerializerOptions
+        if (string.IsNullOrEmpty(responseJson))
         {
-            PropertyNameCaseInsensitive = true
-        });
+            return new EmployeeRelativesListResponse { Success = false, Message = "No data returned from the server" };
+        }
+
+        try
+        {
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            var result = JsonSerializer.Deserialize<EmployeeRelativesListResponse>(responseJson, options);
+            return result ?? new EmployeeRelativesListResponse { Success = false, Message = "Deserialization failed" };
+        }
+        catch (JsonException ex)
+        {
+            Console.WriteLine($"JSON Deserialization Error: {ex.Message}\nResponse: {responseJson}");
+            return new EmployeeRelativesListResponse { Success = false, Message = "Invalid data format from server" };
+        }
     }
 
     public async Task<EmployeeRelativesResponse> CreateAsync(EmployeeRelativesDto relative)
@@ -123,4 +138,3 @@ public class EmployeeRelativesListResponse
     public int TotalPages { get; set; }
     public string Message { get; internal set; }
 }
-
