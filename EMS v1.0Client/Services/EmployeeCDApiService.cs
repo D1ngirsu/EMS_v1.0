@@ -55,7 +55,17 @@ public class EmployeeCDService : IDisposable
 
     public async Task<EmployeeCDResponse> UpdateAsync(int eid, EmployeeCDDto employeeCD)
     {
-        var json = JsonSerializer.Serialize(employeeCD);
+        // Tạo object chỉ với các field cần thiết
+        var updateData = new
+        {
+            Eid = employeeCD.Eid,
+            IdNumber = employeeCD.IdNumber,
+            IssueDay = employeeCD.IssueDay,
+            IssuePlace = employeeCD.IssuePlace,
+            Country = employeeCD.Country
+        };
+
+        var json = JsonSerializer.Serialize(updateData);
         var content = new StringContent(json, Encoding.UTF8, "application/json");
 
         var response = await _client.PutAsync($"api/employee-cd/{eid}", content);

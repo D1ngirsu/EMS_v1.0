@@ -87,7 +87,7 @@ namespace EMS_v1._0Client.Views.HR
         {
             try
             {
-                // Validate required fields
+                // Validate required fields for employee
                 if (string.IsNullOrWhiteSpace(NameTextBox.Text) || DoBDatePicker.SelectedDate == null ||
                     UnitComboBox.SelectedItem == null || PositionComboBox.SelectedItem == null ||
                     string.IsNullOrWhiteSpace(EmailTextBox.Text) || string.IsNullOrWhiteSpace(PhoneTextBox.Text) ||
@@ -117,9 +117,9 @@ namespace EMS_v1._0Client.Views.HR
 
                 var employeeResponse = await _employeeService.CreateEmployeeAsync(employee, _avatarImageData, _avatarImageFileName);
 
-                if (!employeeResponse.Success)
+                if (!employeeResponse.Success || employeeResponse.Data == null)
                 {
-                    string errorMessage = employeeResponse.Message;
+                    string errorMessage = employeeResponse.Message ?? "Không nhận được dữ liệu nhân viên từ server.";
                     if (employeeResponse.Errors != null)
                     {
                         errorMessage += $"\nChi tiết lỗi: {JsonSerializer.Serialize(employeeResponse.Errors)}";
@@ -128,19 +128,7 @@ namespace EMS_v1._0Client.Views.HR
                     return;
                 }
 
-                if (employeeResponse.Data == null)
-                {
-                    MessageBox.Show("Không nhận được dữ liệu nhân viên từ server.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
                 int eid = employeeResponse.Data.Eid;
-
-                // Gán Eid cho tất cả người thân trước khi tạo
-                foreach (var relative in _relatives)
-                {
-                    relative.Eid = eid;
-                }
 
                 // Create Labor Contract
                 if (StartDatePicker.SelectedDate != null && EndDatePicker.SelectedDate != null && ContractStatusComboBox.SelectedItem != null)
@@ -161,9 +149,20 @@ namespace EMS_v1._0Client.Views.HR
                     }
                 }
 
-                // Create Confirmation Documents
-                if (!string.IsNullOrWhiteSpace(IdNumberTextBox.Text) || CDIssueDayDatePicker.SelectedDate != null)
+                if (!string.IsNullOrWhiteSpace(IdNumberTextBox.Text))
                 {
+                    // Validate all required fields when creating CD
+                    if (string.IsNullOrWhiteSpace(IssuePlaceTextBox.Text))
+                    {
+                        MessageBox.Show("Vui lòng điền Nơi cấp CCCD.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    if (string.IsNullOrWhiteSpace(CountryTextBox.Text))
+                    {
+                        MessageBox.Show("Vui lòng điền Quốc gia.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
                     var cd = new EmployeeCDDto
                     {
                         Eid = eid,
@@ -172,16 +171,35 @@ namespace EMS_v1._0Client.Views.HR
                         IssuePlace = IssuePlaceTextBox.Text,
                         Country = CountryTextBox.Text
                     };
+
                     var cdResponse = await _cdService.CreateAsync(cd);
                     if (!cdResponse.Success)
                     {
                         MessageBox.Show($"Lỗi khi tạo thông tin xác nhận: {cdResponse.Errors}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
                     }
                 }
 
-                // Create Academic Skills
-                if (!string.IsNullOrWhiteSpace(AcademicRankTextBox.Text) || !string.IsNullOrWhiteSpace(DegreeTextBox.Text))
+
+                // Create Academic Skills - Validate required fields
+                if (!string.IsNullOrWhiteSpace(AcademicRankTextBox.Text) || !string.IsNullOrWhiteSpace(DegreeTextBox.Text) || !string.IsNullOrWhiteSpace(ASIssuePlaceTextBox.Text))
                 {
+                    if (string.IsNullOrWhiteSpace(AcademicRankTextBox.Text))
+                    {
+                        MessageBox.Show("Vui lòng điền Học hàm.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    if (string.IsNullOrWhiteSpace(DegreeTextBox.Text))
+                    {
+                        MessageBox.Show("Vui lòng điền Bằng cấp.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    if (string.IsNullOrWhiteSpace(ASIssuePlaceTextBox.Text))
+                    {
+                        MessageBox.Show("Vui lòng điền Nơi cấp.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+
                     var asData = new EmployeeASDto
                     {
                         Eid = eid,
@@ -200,6 +218,7 @@ namespace EMS_v1._0Client.Views.HR
                 // Create Relatives
                 foreach (var relative in _relatives)
                 {
+                    relative.Eid = eid;
                     var relResponse = await _relativesService.CreateAsync(relative);
                     if (!relResponse.Success)
                     {

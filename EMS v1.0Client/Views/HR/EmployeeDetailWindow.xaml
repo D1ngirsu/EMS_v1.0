@@ -19,8 +19,8 @@
         </Style>
         <!-- Image style for consistent display -->
         <Style x:Key="ImageStyle" TargetType="Image">
-            <Setter Property="Width" Value="50"/>
-            <Setter Property="Height" Value="50"/>
+            <Setter Property="Width" Value="80"/>
+            <Setter Property="Height" Value="80"/>
             <Setter Property="Stretch" Value="Uniform"/>
             <Setter Property="Margin" Value="5"/>
         </Style>
@@ -154,9 +154,9 @@
                     <TextBlock Grid.Row="3" Grid.Column="0" Text="Ngày cấp:" FontWeight="Bold" Margin="0,0,10,5"/>
                     <TextBlock Grid.Row="3" Grid.Column="1" x:Name="IssueDayTextBlock" Margin="0,0,0,5"/>
                     <TextBlock Grid.Row="4" Grid.Column="0" Text="Ảnh bằng cấp 1:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <Image Grid.Row="4" Grid.Column="1" x:Name="DegreeImg1" Style="{StaticResource ImageStyle}"/>
+                    <Image Grid.Row="4" Grid.Column="1" x:Name="DegreeImg1" Style="{StaticResource ImageStyle}" MouseLeftButtonUp="DegreeImage1_Click"/>
                     <TextBlock Grid.Row="5" Grid.Column="0" Text="Ảnh bằng cấp 2:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <Image Grid.Row="5" Grid.Column="1" x:Name="DegreeImg2" Style="{StaticResource ImageStyle}"/>
+                    <Image Grid.Row="5" Grid.Column="1" x:Name="DegreeImg2" Style="{StaticResource ImageStyle}" MouseLeftButtonUp="DegreeImage2_Click"/>
                 </Grid>
             </TabItem>
 

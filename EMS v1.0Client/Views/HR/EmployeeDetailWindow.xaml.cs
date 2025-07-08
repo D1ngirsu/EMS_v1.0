@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Net.Http;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -401,6 +402,50 @@ namespace EMS_v1._0Client.Views.HR
                         MessageBox.Show($"Lỗi khi mở ảnh lớn: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
+            }
+        }
+
+        private async void DegreeImage1_Click(object sender, MouseButtonEventArgs e)
+        {
+            try
+            {
+                var response = await _asService.GetByEidAsync(_eid);
+                if (response.Success && response.Data != null && !string.IsNullOrEmpty(response.Data.DegreeImg1))
+                {
+                    var enlargedImageWindow = new EnlargedImageWindow(response.Data.DegreeImg1);
+                    enlargedImageWindow.ShowDialog();
+                }
+                else
+                {
+                    MessageBox.Show("Không có ảnh để hiển thị.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error opening enlarged degree image 1: {ex.Message}");
+                MessageBox.Show($"Lỗi khi mở ảnh bằng cấp 1: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void DegreeImage2_Click(object sender, MouseButtonEventArgs e)
+        {
+            try
+            {
+                var response = await _asService.GetByEidAsync(_eid);
+                if (response.Success && response.Data != null && !string.IsNullOrEmpty(response.Data.DegreeImg2))
+                {
+                    var enlargedImageWindow = new EnlargedImageWindow(response.Data.DegreeImg2);
+                    enlargedImageWindow.ShowDialog();
+                }
+                else
+                {
+                    MessageBox.Show("Không có ảnh để hiển thị.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error opening enlarged degree image 2: {ex.Message}");
+                MessageBox.Show($"Lỗi khi mở ảnh bằng cấp 2: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
     }

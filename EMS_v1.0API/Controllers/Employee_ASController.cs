@@ -1,9 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.IO;
+using System.Text.Json;
 using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
 
 [ApiController]
 [Route("api/employee-as")]
@@ -53,10 +54,22 @@ public class EmployeeASController : ControllerBase
             .Take(pageSize)
             .ToListAsync();
 
+        // Convert to DTOs to avoid circular references
+        var employeeASDtos = employeeASs.Select(e => new EmployeeASDto
+        {
+            Eid = e.Eid,
+            AcademicRank = e.AcademicRank,
+            Degree = e.Degree,
+            PlaceIssue = e.PlaceIssue,
+            IssueDay = e.IssueDay,
+            DegreeImg1 = e.DegreeImg1,
+            DegreeImg2 = e.DegreeImg2
+        }).ToList();
+
         return Ok(new
         {
             Success = true,
-            Data = employeeASs,
+            Data = employeeASDtos, // Return DTOs directly, not serialized JSON
             TotalCount = totalCount,
             Page = page,
             PageSize = pageSize,
@@ -76,7 +89,19 @@ public class EmployeeASController : ControllerBase
             return NotFound(new { Success = false, Message = "Không tìm thấy thông tin học hàm học vị" });
         }
 
-        return Ok(new { Success = true, Data = employeeAS });
+        // Convert to DTO to avoid circular references
+        var employeeASDto = new EmployeeASDto
+        {
+            Eid = employeeAS.Eid,
+            AcademicRank = employeeAS.AcademicRank,
+            Degree = employeeAS.Degree,
+            PlaceIssue = employeeAS.PlaceIssue,
+            IssueDay = employeeAS.IssueDay,
+            DegreeImg1 = employeeAS.DegreeImg1,
+            DegreeImg2 = employeeAS.DegreeImg2
+        };
+
+        return Ok(new { Success = true, Data = employeeASDto }); // Return DTO directly
     }
 
     [HttpGet("image1/{eid}")]
@@ -141,25 +166,55 @@ public class EmployeeASController : ControllerBase
 
     [HttpPost]
     [SessionAuthorize(RequiredRole = new[] { "HR" })]
-    public async Task<IActionResult> Create([FromForm] Employee_AS employeeAS, IFormFile? image1, IFormFile? image2)
+    public async Task<IActionResult> Create([FromForm] string employeeAS, IFormFile? image1, IFormFile? image2)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ", Errors = ModelState });
-        }
-
-        // Validate images
-        if (image1 != null && !IsValidImage(image1))
-        {
-            return BadRequest(new { Success = false, Message = "Ảnh DegreeImg1 không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
-        }
-        if (image2 != null && !IsValidImage(image2))
-        {
-            return BadRequest(new { Success = false, Message = "Ảnh DegreeImg2 không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
-        }
-
         try
         {
+            // Deserialize the EmployeeASDto from JSON string
+            var employeeASDto = JsonSerializer.Deserialize<EmployeeASDto>(employeeAS, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (employeeASDto == null)
+            {
+                return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ" });
+            }
+
+            // Validate required fields manually since we're using DTO
+            if (string.IsNullOrWhiteSpace(employeeASDto.AcademicRank))
+            {
+                return BadRequest(new { Success = false, Message = "Học hàm là bắt buộc" });
+            }
+            if (string.IsNullOrWhiteSpace(employeeASDto.Degree))
+            {
+                return BadRequest(new { Success = false, Message = "Bằng cấp là bắt buộc" });
+            }
+            if (string.IsNullOrWhiteSpace(employeeASDto.PlaceIssue))
+            {
+                return BadRequest(new { Success = false, Message = "Nơi cấp là bắt buộc" });
+            }
+
+            // Validate images
+            if (image1 != null && !IsValidImage(image1))
+            {
+                return BadRequest(new { Success = false, Message = "Ảnh DegreeImg1 không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
+            }
+            if (image2 != null && !IsValidImage(image2))
+            {
+                return BadRequest(new { Success = false, Message = "Ảnh DegreeImg2 không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
+            }
+
+            // Convert DTO to Entity
+            var employeeASEntity = new Employee_AS
+            {
+                Eid = employeeASDto.Eid,
+                AcademicRank = employeeASDto.AcademicRank,
+                Degree = employeeASDto.Degree,
+                PlaceIssue = employeeASDto.PlaceIssue,
+                IssueDay = employeeASDto.IssueDay
+            };
+
             // Handle image1 upload
             if (image1 != null)
             {
@@ -171,7 +226,7 @@ public class EmployeeASController : ControllerBase
                 {
                     await image1.CopyToAsync(stream);
                 }
-                employeeAS.DegreeImg1 = $"/Img/Employee_AS/{randomFileName}";
+                employeeASEntity.DegreeImg1 = $"/Img/Employee_AS/{randomFileName}";
             }
 
             // Handle image2 upload
@@ -185,14 +240,30 @@ public class EmployeeASController : ControllerBase
                 {
                     await image2.CopyToAsync(stream);
                 }
-                employeeAS.DegreeImg2 = $"/Img/Employee_AS/{randomFileName}";
+                employeeASEntity.DegreeImg2 = $"/Img/Employee_AS/{randomFileName}";
             }
 
-            _context.Employee_ASs.Add(employeeAS);
+            _context.Employee_ASs.Add(employeeASEntity);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction(nameof(GetByEid), new { eid = employeeAS.Eid },
-                new { Success = true, Data = employeeAS, Message = "Tạo thông tin học hàm học vị thành công" });
+            // Convert back to DTO for response
+            var responseDto = new EmployeeASDto
+            {
+                Eid = employeeASEntity.Eid,
+                AcademicRank = employeeASEntity.AcademicRank,
+                Degree = employeeASEntity.Degree,
+                PlaceIssue = employeeASEntity.PlaceIssue,
+                IssueDay = employeeASEntity.IssueDay,
+                DegreeImg1 = employeeASEntity.DegreeImg1,
+                DegreeImg2 = employeeASEntity.DegreeImg2
+            };
+
+            return CreatedAtAction(nameof(GetByEid), new { eid = employeeASEntity.Eid },
+                new { Success = true, Data = responseDto, Message = "Tạo thông tin học hàm học vị thành công" });
+        }
+        catch (JsonException)
+        {
+            return BadRequest(new { Success = false, Message = "Dữ liệu JSON không hợp lệ" });
         }
         catch (Exception ex)
         {
@@ -202,70 +273,110 @@ public class EmployeeASController : ControllerBase
 
     [HttpPut("{eid}")]
     [SessionAuthorize(RequiredRole = new[] { "HR" })]
-    public async Task<IActionResult> Update(int eid, [FromForm] Employee_AS employeeAS, IFormFile? image1, IFormFile? image2)
+    public async Task<IActionResult> Update(int eid, [FromForm] string employeeAS, IFormFile? image1, IFormFile? image2)
     {
-        if (eid != employeeAS.Eid)
-        {
-            return BadRequest(new { Success = false, Message = "ID không khớp" });
-        }
-
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ", Errors = ModelState });
-        }
-
-        // Validate images
-        if (image1 != null && !IsValidImage(image1))
-        {
-            return BadRequest(new { Success = false, Message = "Ảnh DegreeImg1 không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
-        }
-        if (image2 != null && !IsValidImage(image2))
-        {
-            return BadRequest(new { Success = false, Message = "Ảnh DegreeImg2 không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
-        }
-
-        // Handle image1 upload
-        if (image1 != null)
-        {
-            var fileExtension = Path.GetExtension(image1.FileName);
-            var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
-            var filePath = Path.Combine(_imageBasePath, randomFileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await image1.CopyToAsync(stream);
-            }
-            employeeAS.DegreeImg1 = $"/Img/Employee_AS/{randomFileName}";
-        }
-
-        // Handle image2 upload
-        if (image2 != null)
-        {
-            var fileExtension = Path.GetExtension(image2.FileName);
-            var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
-            var filePath = Path.Combine(_imageBasePath, randomFileName);
-
-            using (var stream = new FileStream(filePath, FileMode.Create))
-            {
-                await image2.CopyToAsync(stream);
-            }
-            employeeAS.DegreeImg2 = $"/Img/Employee_AS/{randomFileName}";
-        }
-
-        _context.Entry(employeeAS).State = EntityState.Modified;
-
         try
         {
-            await _context.SaveChangesAsync();
-            return Ok(new { Success = true, Data = employeeAS, Message = "Cập nhật thông tin học hàm học vị thành công" });
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!await _context.Employee_ASs.AnyAsync(e => e.Eid == eid))
+            // Deserialize the EmployeeASDto from JSON string
+            var employeeASDto = JsonSerializer.Deserialize<EmployeeASDto>(employeeAS, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+
+            if (employeeASDto == null)
+            {
+                return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ" });
+            }
+
+            if (eid != employeeASDto.Eid)
+            {
+                return BadRequest(new { Success = false, Message = "ID không khớp" });
+            }
+
+            // Validate required fields manually
+            if (string.IsNullOrWhiteSpace(employeeASDto.AcademicRank))
+            {
+                return BadRequest(new { Success = false, Message = "Học hàm là bắt buộc" });
+            }
+            if (string.IsNullOrWhiteSpace(employeeASDto.Degree))
+            {
+                return BadRequest(new { Success = false, Message = "Bằng cấp là bắt buộc" });
+            }
+            if (string.IsNullOrWhiteSpace(employeeASDto.PlaceIssue))
+            {
+                return BadRequest(new { Success = false, Message = "Nơi cấp là bắt buộc" });
+            }
+
+            // Validate images
+            if (image1 != null && !IsValidImage(image1))
+            {
+                return BadRequest(new { Success = false, Message = "Ảnh DegreeImg1 không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
+            }
+            if (image2 != null && !IsValidImage(image2))
+            {
+                return BadRequest(new { Success = false, Message = "Ảnh DegreeImg2 không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
+            }
+
+            // Get existing entity
+            var existingEntity = await _context.Employee_ASs.FindAsync(eid);
+            if (existingEntity == null)
             {
                 return NotFound(new { Success = false, Message = "Không tìm thấy thông tin học hàm học vị" });
             }
-            throw;
+
+            // Update entity properties
+            existingEntity.AcademicRank = employeeASDto.AcademicRank;
+            existingEntity.Degree = employeeASDto.Degree;
+            existingEntity.PlaceIssue = employeeASDto.PlaceIssue;
+            existingEntity.IssueDay = employeeASDto.IssueDay;
+
+            // Handle image1 upload
+            if (image1 != null)
+            {
+                var fileExtension = Path.GetExtension(image1.FileName);
+                var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
+                var filePath = Path.Combine(_imageBasePath, randomFileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await image1.CopyToAsync(stream);
+                }
+                existingEntity.DegreeImg1 = $"/Img/Employee_AS/{randomFileName}";
+            }
+
+            // Handle image2 upload
+            if (image2 != null)
+            {
+                var fileExtension = Path.GetExtension(image2.FileName);
+                var randomFileName = $"{Guid.NewGuid()}{fileExtension}";
+                var filePath = Path.Combine(_imageBasePath, randomFileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await image2.CopyToAsync(stream);
+                }
+                existingEntity.DegreeImg2 = $"/Img/Employee_AS/{randomFileName}";
+            }
+
+            await _context.SaveChangesAsync();
+
+            // Convert back to DTO for response
+            var responseDto = new EmployeeASDto
+            {
+                Eid = existingEntity.Eid,
+                AcademicRank = existingEntity.AcademicRank,
+                Degree = existingEntity.Degree,
+                PlaceIssue = existingEntity.PlaceIssue,
+                IssueDay = existingEntity.IssueDay,
+                DegreeImg1 = existingEntity.DegreeImg1,
+                DegreeImg2 = existingEntity.DegreeImg2
+            };
+
+            return Ok(new { Success = true, Data = responseDto, Message = "Cập nhật thông tin học hàm học vị thành công" });
+        }
+        catch (JsonException)
+        {
+            return BadRequest(new { Success = false, Message = "Dữ liệu JSON không hợp lệ" });
         }
         catch (Exception ex)
         {
