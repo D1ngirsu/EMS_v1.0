@@ -345,5 +345,40 @@ namespace EMS_v1._0Client.Views.HR
             RelativeRelationTextBox.Text = string.Empty;
             RelativeContactTextBox.Text = string.Empty;
         }
+        private void DeleteRelativeButton_Click(object sender, RoutedEventArgs e)
+        {
+            // Kiểm tra xem có hàng nào được chọn không
+            if (RelativesDataGrid.SelectedItem == null)
+            {
+                MessageBox.Show("Vui lòng chọn người thân cần xóa.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            // Xác nhận xóa
+            var result = MessageBox.Show("Bạn có chắc chắn muốn xóa người thân này?", "Xác nhận xóa", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    // Lấy item được chọn
+                    var selectedRelative = RelativesDataGrid.SelectedItem as EmployeeRelativesDto;
+                    if (selectedRelative != null)
+                    {
+                        // Xóa khỏi danh sách
+                        _relatives.Remove(selectedRelative);
+
+                        // Refresh DataGrid
+                        RelativesDataGrid.ItemsSource = null;
+                        RelativesDataGrid.ItemsSource = _relatives;
+
+                        MessageBox.Show("Đã xóa người thân thành công.", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi khi xóa người thân: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
     }
 }

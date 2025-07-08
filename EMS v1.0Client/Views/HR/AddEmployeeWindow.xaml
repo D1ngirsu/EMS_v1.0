@@ -177,7 +177,7 @@
                     </StackPanel>
                 </Grid>
             </TabItem>
-            <TabItem Header="Người thân">
+            <TabItem Header="Người thân" Height="20" VerticalAlignment="Top">
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -201,14 +201,13 @@
                         <TextBox Grid.Row="1" Grid.Column="1" x:Name="RelativeRelationTextBox" Margin="0,0,0,5"/>
                         <TextBlock Grid.Row="2" Grid.Column="0" Text="Liên hệ:" FontWeight="Bold" Margin="0,0,10,5"/>
                         <TextBox Grid.Row="2" Grid.Column="1" x:Name="RelativeContactTextBox" Margin="0,0,0,5"/>
-                        <TextBlock Grid.Row="3" Grid.Column="0" Text="Loại:" FontWeight="Bold" Margin="0,0,10,5"/>
                         <TextBlock Grid.Row="3" Grid.Column="0" Text="Loại người thân:" FontWeight="Bold" Margin="0,0,10,5"/>
                         <ComboBox Grid.Row="3" Grid.Column="1" x:Name="RelativeTypeComboBox" Margin="0,0,0,5">
                             <ComboBoxItem Content="Thành viên gia đình" Tag="0"/>
                             <ComboBoxItem Content="Liên hệ khẩn cấp" Tag="1"/>
                         </ComboBox>
                     </Grid>
-                    <DataGrid Grid.Row="1" x:Name="RelativesDataGrid" AutoGenerateColumns="False" IsReadOnly="True" Margin="0,10,0,0" CanUserAddRows="False">
+                    <DataGrid Grid.Row="1" x:Name="RelativesDataGrid" AutoGenerateColumns="False" IsReadOnly="True" Margin="0,10,0,0" CanUserAddRows="False" SelectionMode="Single">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="Tên" Binding="{Binding RName}" Width="200"/>
                             <DataGridTextColumn Header="Quan hệ" Binding="{Binding RRelativity}" Width="150"/>
@@ -216,10 +215,13 @@
                             <DataGridTextColumn Header="Loại" Binding="{Binding Type}" Width="*"/>
                         </DataGrid.Columns>
                     </DataGrid>
-                    <Button Grid.Row="2" x:Name="AddRelativeButton" Content="Thêm người thân" Style="{StaticResource GridButtonStyle}" Click="AddRelativeButton_Click" HorizontalAlignment="Right" Margin="0,18,86,-2"/>
+                    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,92,0">
+                        <Button x:Name="AddRelativeButton" Content="Thêm người thân" Style="{StaticResource GridButtonStyle}" Click="AddRelativeButton_Click"/>
+                        <Button x:Name="DeleteRelativeButton" Content="Xóa người thân" Style="{StaticResource GridButtonStyle}" Click="DeleteRelativeButton_Click"/>
+                    </StackPanel>
                 </Grid>
             </TabItem>
         </TabControl>
-        <Button Grid.Row="1" x:Name="SaveEmployeeButton" Content="Lưu nhân viên" Style="{StaticResource GridButtonStyle}" Click="SaveEmployeeButton_Click" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,10"/>
+        <Button Grid.Row="1" x:Name="SaveEmployeeButton" Content="Lưu nhân viên" Style="{StaticResource GridButtonStyle}" Click="SaveEmployeeButton_Click" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,14,18"/>
     </Grid>
 </Window>
