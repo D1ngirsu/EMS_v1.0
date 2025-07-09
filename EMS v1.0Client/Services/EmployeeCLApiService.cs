@@ -57,20 +57,26 @@ public class EmployeeCLService : IDisposable
     {
         using var content = new MultipartFormDataContent();
 
-        // Add employeeCL fields
         content.Add(new StringContent(employeeCL.Cid.ToString()), "Cid");
         content.Add(new StringContent(employeeCL.Eid.ToString()), "Eid");
         content.Add(new StringContent(employeeCL.StartDate.ToString("yyyy-MM-dd")), "StartDate");
-        content.Add(new StringContent(employeeCL.EndDate.ToString("yyyy-MM-dd")), "EndDate");
+
+        // Fix: Only add ExpectedEndDate if it's not null
         if (employeeCL.ExpectedEndDate.HasValue)
         {
             content.Add(new StringContent(employeeCL.ExpectedEndDate.Value.ToString("yyyy-MM-dd")), "ExpectedEndDate");
         }
+
+        if (employeeCL.EndDate.HasValue)
+        {
+            content.Add(new StringContent(employeeCL.EndDate.Value.ToString("yyyy-MM-dd")), "EndDate");
+        }
+
         content.Add(new StringContent(employeeCL.Status ?? ""), "Status");
+        content.Add(new StringContent(employeeCL.Type ?? ""), "Type");
         content.Add(new StringContent(employeeCL.EmployeeUser ?? ""), "EmployeeUser");
         content.Add(new StringContent(employeeCL.SignDate.ToString("yyyy-MM-dd")), "SignDate");
 
-        // Handle image
         if (imageData != null && imageData.Length > 0 && !string.IsNullOrEmpty(imageFileName))
         {
             var imageContent = new ByteArrayContent(imageData);
@@ -85,11 +91,6 @@ public class EmployeeCLService : IDisposable
             imageContent.Headers.ContentType = new MediaTypeHeaderValue(contentType);
             content.Add(imageContent, "image", imageFileName);
             Console.WriteLine($"Image added to request, length: {imageData.Length} bytes, fileName: {imageFileName}");
-        }
-        else
-        {
-            content.Add(new StringContent(""), "Img");
-            Console.WriteLine("No image data provided, Img set to empty");
         }
 
         try
@@ -117,20 +118,26 @@ public class EmployeeCLService : IDisposable
     {
         using var content = new MultipartFormDataContent();
 
-        // Add employeeCL fields
         content.Add(new StringContent(employeeCL.Cid.ToString()), "Cid");
         content.Add(new StringContent(employeeCL.Eid.ToString()), "Eid");
         content.Add(new StringContent(employeeCL.StartDate.ToString("yyyy-MM-dd")), "StartDate");
-        content.Add(new StringContent(employeeCL.EndDate.ToString("yyyy-MM-dd")), "EndDate");
+
+        // Fix: Only add ExpectedEndDate if it's not null
         if (employeeCL.ExpectedEndDate.HasValue)
         {
             content.Add(new StringContent(employeeCL.ExpectedEndDate.Value.ToString("yyyy-MM-dd")), "ExpectedEndDate");
         }
+
+        if (employeeCL.EndDate.HasValue)
+        {
+            content.Add(new StringContent(employeeCL.EndDate.Value.ToString("yyyy-MM-dd")), "EndDate");
+        }
+
         content.Add(new StringContent(employeeCL.Status ?? ""), "Status");
+        content.Add(new StringContent(employeeCL.Type ?? ""), "Type");
         content.Add(new StringContent(employeeCL.EmployeeUser ?? ""), "EmployeeUser");
         content.Add(new StringContent(employeeCL.SignDate.ToString("yyyy-MM-dd")), "SignDate");
 
-        // Handle image
         if (imageData != null && imageData.Length > 0 && !string.IsNullOrEmpty(imageFileName))
         {
             var imageContent = new ByteArrayContent(imageData);
@@ -210,5 +217,5 @@ public class EmployeeCLListResponse
     public int Page { get; set; }
     public int PageSize { get; set; }
     public int TotalPages { get; set; }
-    public string Message { get; internal set; }
+    public string Message { get; set; }
 }

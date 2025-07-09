@@ -197,11 +197,12 @@
 
             <!-- Tab 6: Labor Contracts -->
             <TabItem Header="Hợp đồng lao động">
-                <DataGrid x:Name="ContractsDataGrid" AutoGenerateColumns="False" IsReadOnly="True" Margin="10" CanUserAddRows="False">
+                <DataGrid x:Name="ContractsDataGrid" AutoGenerateColumns="False" IsReadOnly="True" Margin="3,0,5,0" CanUserAddRows="False" Height="398">
                     <DataGrid.Columns>
                         <DataGridTextColumn Header="Mã hợp đồng" Binding="{Binding Cid}" Width="100"/>
                         <DataGridTextColumn Header="Ngày bắt đầu" Binding="{Binding StartDate, StringFormat=d/M/yyyy}" Width="100"/>
-                        <DataGridTextColumn Header="Ngày kết thúc" Binding="{Binding EndDate, StringFormat=d/M/yyyy}" Width="100"/>
+                        <DataGridTextColumn Header="Ngày kết thúc" Binding="{Binding ExpectedEndDate, StringFormat=d/M/yyyy}" Width="100"/>
+                        <DataGridTextColumn Header="Loại hợp đồng" Binding="{Binding Type}" Width="150"/>
                         <DataGridTextColumn Header="Trạng thái" Binding="{Binding Status}" Width="*"/>
                         <DataGridTemplateColumn Header="Ảnh" Width="60">
                             <DataGridTemplateColumn.CellTemplate>

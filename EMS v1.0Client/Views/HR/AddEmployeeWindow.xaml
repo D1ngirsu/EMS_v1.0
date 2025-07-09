@@ -103,15 +103,16 @@
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Ngày bắt đầu:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <DatePicker Grid.Row="0" Grid.Column="1" x:Name="StartDatePicker" Margin="0,0,0,5"/>
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Ngày kết thúc:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <DatePicker Grid.Row="1" Grid.Column="1" x:Name="EndDatePicker" Margin="0,0,0,5"/>
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Trạng thái:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <ComboBox Grid.Row="2" Grid.Column="1" x:Name="ContractStatusComboBox" Margin="0,0,0,5">
-                        <ComboBoxItem Content="Hiệu lực"/>
-                        <ComboBoxItem Content="Không hiệu lực"/>
+                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Loại hợp đồng:" FontWeight="Bold" Margin="0,0,10,5"/>
+                    <ComboBox Grid.Row="0" Grid.Column="1" x:Name="ContractTypeComboBox" Margin="0,0,0,5" SelectionChanged="ContractTypeComboBox_SelectionChanged">
+                        <ComboBoxItem Content="Thử việc"/>
+                        <ComboBoxItem Content="Có thời hạn"/>
+                        <ComboBoxItem Content="Vô thời hạn"/>
                     </ComboBox>
+                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Ngày bắt đầu:" FontWeight="Bold" Margin="0,0,10,5"/>
+                    <DatePicker Grid.Row="1" Grid.Column="1" x:Name="StartDatePicker" Margin="0,0,0,5"/>
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Ngày kết thúc dự kiến:" FontWeight="Bold" Margin="0,0,10,5"/>
+                    <DatePicker Grid.Row="2" Grid.Column="1" x:Name="EndDatePicker" Margin="0,0,0,5"/>
                     <TextBlock Grid.Row="3" Grid.Column="0" Text="Ngày ký:" FontWeight="Bold" Margin="0,0,10,5"/>
                     <DatePicker Grid.Row="3" Grid.Column="1" x:Name="SignDatePicker" Margin="0,0,0,5" IsEnabled="False"/>
                     <TextBlock Grid.Row="4" Grid.Column="0" Text="Ảnh hợp đồng:" FontWeight="Bold" Margin="0,0,10,5"/>

@@ -12,14 +12,17 @@ public class Employee_CL
     [Required]
     public DateTime StartDate { get; set; }
 
-    [Required]
-    public DateTime EndDate { get; set; }
+    public DateTime? EndDate { get; set; }
 
     public DateTime? ExpectedEndDate { get; set; }
 
     [Required]
     [StringLength(20)]
     public string? Status { get; set; } // "Hiệu lực" hoặc "Không Hiệu lực"
+
+    [Required]
+    [StringLength(20)]
+    public string? Type { get; set; } // "Thử việc", "Có thời hạn", "Vô thời hạn"
 
     [Required]
     [StringLength(100)]

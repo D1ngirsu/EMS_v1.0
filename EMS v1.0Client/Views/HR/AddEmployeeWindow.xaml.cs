@@ -43,6 +43,7 @@ namespace EMS_v1._0Client.Views.HR
             RelativesDataGrid.ItemsSource = _relatives;
             // Set default value for SignDatePicker
             SignDatePicker.SelectedDate = DateTime.Now;
+
         }
 
         private async void LoadDepartmentsAndPositions()
@@ -77,10 +78,24 @@ namespace EMS_v1._0Client.Views.HR
             }
         }
 
-        // Giả lập phương thức lấy tên người dùng hiện tại
-        private string GetCurrentUserName()
+        private void ContractTypeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            return System.Security.Principal.WindowsIdentity.GetCurrent().Name;
+            if (ContractTypeComboBox.SelectedItem != null)
+            {
+                var selectedType = (ContractTypeComboBox.SelectedItem as ComboBoxItem)?.Content.ToString();
+
+                if (selectedType == "Vô thời hạn")
+                {
+                    // Disable end date picker for permanent contracts
+                    EndDatePicker.IsEnabled = false;
+                    EndDatePicker.SelectedDate = null;
+                }
+                else
+                {
+                    // Enable end date picker for probation and fixed-term contracts
+                    EndDatePicker.IsEnabled = true;
+                }
+            }
         }
 
         private async void SaveEmployeeButton_Click(object sender, RoutedEventArgs e)
@@ -131,17 +146,22 @@ namespace EMS_v1._0Client.Views.HR
                 int eid = employeeResponse.Data.Eid;
 
                 // Create Labor Contract
-                if (StartDatePicker.SelectedDate != null && EndDatePicker.SelectedDate != null && ContractStatusComboBox.SelectedItem != null)
+                if (StartDatePicker.SelectedDate != null && ContractTypeComboBox.SelectedItem != null)
                 {
+                    var contractType = (ContractTypeComboBox.SelectedItem as ComboBoxItem)?.Content.ToString();
+
                     var contract = new EmployeeCLDto
                     {
                         Eid = eid,
                         StartDate = StartDatePicker.SelectedDate.Value,
-                        EndDate = EndDatePicker.SelectedDate.Value,
-                        Status = (ContractStatusComboBox.SelectedItem as ComboBoxItem)?.Content.ToString(),
+                        EndDate = DateTime.Now.AddYears(100), // Default end date, will be overridden by ExpectedEndDate logic
+                        ExpectedEndDate = contractType == "Vô thời hạn" ? null : EndDatePicker.SelectedDate,
+                        Status = "Hiệu lực", // Always set to "Hiệu lực" for new contracts
+                        Type = contractType,
                         EmployeeUser = "VTB",
                         SignDate = SignDatePicker.SelectedDate ?? DateTime.Now
                     };
+
                     var clResponse = await _clService.CreateAsync(contract, _contractImageData, _contractImageFileName);
                     if (!clResponse.Success)
                     {

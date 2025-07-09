@@ -6,7 +6,6 @@ using System.IO;
 using System.Threading.Tasks;
 using System.Text.Json;
 
-// Employee_CL Controller
 [ApiController]
 [Route("api/employee-cl")]
 [SessionAuthorize]
@@ -22,7 +21,6 @@ public class EmployeeCLController : ControllerBase
     {
         _context = context;
         _logger = logger;
-        // Ensure directory exists
         if (!Directory.Exists(_imageBasePath))
         {
             Directory.CreateDirectory(_imageBasePath);
@@ -31,7 +29,7 @@ public class EmployeeCLController : ControllerBase
 
     private bool IsValidImage(IFormFile image)
     {
-        if (image == null) return true; // Image is optional
+        if (image == null) return true;
         var extension = Path.GetExtension(image.FileName).ToLowerInvariant();
         if (!_allowedExtensions.Contains(extension))
         {
@@ -55,6 +53,19 @@ public class EmployeeCLController : ControllerBase
         var employeeCLs = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
+            .Select(e => new EmployeeCLDto
+            {
+                Cid = e.Cid,
+                Eid = e.Eid,
+                EmployeeUser = e.EmployeeUser,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                ExpectedEndDate = e.ExpectedEndDate,
+                Status = e.Status,
+                Type = e.Type,
+                Img = e.Img,
+                SignDate = e.SignDate
+            })
             .ToListAsync();
 
         return Ok(new
@@ -73,6 +84,19 @@ public class EmployeeCLController : ControllerBase
     {
         var employeeCL = await _context.Employee_CLs
             .Include(e => e.Employee)
+            .Select(e => new EmployeeCLDto
+            {
+                Cid = e.Cid,
+                Eid = e.Eid,
+                EmployeeUser = e.EmployeeUser,
+                StartDate = e.StartDate,
+                EndDate = e.EndDate,
+                ExpectedEndDate = e.ExpectedEndDate,
+                Status = e.Status,
+                Type = e.Type,
+                Img = e.Img,
+                SignDate = e.SignDate
+            })
             .FirstOrDefaultAsync(e => e.Cid == cid);
 
         if (employeeCL == null)
@@ -104,12 +128,13 @@ public class EmployeeCLController : ControllerBase
                 EndDate = e.EndDate,
                 ExpectedEndDate = e.ExpectedEndDate,
                 Status = e.Status,
+                Type = e.Type,
                 Img = e.Img,
                 SignDate = e.SignDate
             })
             .ToListAsync();
 
-        if (employeeCLs == null || !employeeCLs.Any())
+        if (!employeeCLs.Any())
         {
             return NotFound(new { Success = false, Message = "Không tìm thấy thông tin hợp đồng lao động cho nhân viên này" });
         }
@@ -127,13 +152,10 @@ public class EmployeeCLController : ControllerBase
 
     [HttpPost]
     [SessionAuthorize(RequiredRole = new[] { "HR" })]
-    public async Task<IActionResult> Create([FromForm] Employee_CL employeeCL, IFormFile? image)
+    public async Task<IActionResult> Create([FromForm] EmployeeCLDto employeeCL, IFormFile? image)
     {
         _logger.LogInformation("CreateEmployeeCL called with employeeCL: {Cid}, Image provided: {ImageProvided}, Image Length: {ImageLength}, Img Path: {ImgPath}",
             employeeCL.Cid, image != null, image?.Length, employeeCL.Img);
-
-        // Loại bỏ yêu cầu bắt buộc cho Img trong ModelState
-        ModelState.Remove("Img");
 
         if (!ModelState.IsValid)
         {
@@ -144,7 +166,6 @@ public class EmployeeCLController : ControllerBase
             return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ", Errors = errors });
         }
 
-        // Validate image
         if (image != null && !IsValidImage(image))
         {
             _logger.LogWarning("Invalid image format or size. File: {FileName}, Size: {FileSize}",
@@ -155,7 +176,19 @@ public class EmployeeCLController : ControllerBase
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // Handle image upload
+            var employeeCLModel = new Employee_CL
+            {
+                Cid = employeeCL.Cid,
+                Eid = employeeCL.Eid,
+                EmployeeUser = employeeCL.EmployeeUser,
+                StartDate = employeeCL.StartDate,
+                EndDate = employeeCL.EndDate,
+                ExpectedEndDate = employeeCL.ExpectedEndDate,
+                Status = employeeCL.Status,
+                Type = employeeCL.Type,
+                SignDate = employeeCL.SignDate
+            };
+
             if (image != null)
             {
                 var fileExtension = Path.GetExtension(image.FileName).ToLowerInvariant();
@@ -166,23 +199,15 @@ public class EmployeeCLController : ControllerBase
                 {
                     await image.CopyToAsync(stream);
                 }
-                employeeCL.Img = $"/Img/EmployeeCL/{randomFileName}";
-                _logger.LogInformation("Image uploaded successfully: {FilePath}", employeeCL.Img);
-            }
-            else
-            {
-                employeeCL.Img = null; // Ensure Img is null if no image is provided
-                _logger.LogInformation("No image provided for EmployeeCL: {Cid}", employeeCL.Cid);
+                employeeCLModel.Img = $"/Img/EmployeeCL/{randomFileName}";
+                _logger.LogInformation("Image uploaded successfully: {FilePath}", employeeCLModel.Img);
             }
 
-            // Add Employee_CL to database
-            _context.Employee_CLs.Add(employeeCL);
+            _context.Employee_CLs.Add(employeeCLModel);
             await _context.SaveChangesAsync();
-
-            // Commit transaction
             await transaction.CommitAsync();
 
-            return CreatedAtAction(nameof(GetByCid), new { cid = employeeCL.Cid },
+            return CreatedAtAction(nameof(GetByCid), new { cid = employeeCLModel.Cid },
                 new { Success = true, Data = employeeCL, Message = "Tạo thông tin hợp đồng lao động thành công" });
         }
         catch (Exception ex)
@@ -195,15 +220,12 @@ public class EmployeeCLController : ControllerBase
 
     [HttpPut("{cid}")]
     [SessionAuthorize(RequiredRole = new[] { "HR" })]
-    public async Task<IActionResult> Update(int cid, [FromForm] Employee_CL employeeCL, IFormFile? image)
+    public async Task<IActionResult> Update(int cid, [FromForm] EmployeeCLDto employeeCL, IFormFile? image)
     {
         if (cid != employeeCL.Cid)
         {
             return BadRequest(new { Success = false, Message = "ID không khớp" });
         }
-
-        // Loại bỏ yêu cầu bắt buộc cho Img trong ModelState
-        ModelState.Remove("Img");
 
         if (!ModelState.IsValid)
         {
@@ -214,7 +236,6 @@ public class EmployeeCLController : ControllerBase
             return BadRequest(new { Success = false, Message = "Dữ liệu không hợp lệ", Errors = errors });
         }
 
-        // Validate image
         if (image != null && !IsValidImage(image))
         {
             _logger.LogWarning("Invalid image format or size. File: {FileName}, Size: {FileSize}",
@@ -225,17 +246,14 @@ public class EmployeeCLController : ControllerBase
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // Fetch existing Employee_CL
             var existingEmployeeCL = await _context.Employee_CLs.FindAsync(cid);
             if (existingEmployeeCL == null)
             {
                 return NotFound(new { Success = false, Message = "Không tìm thấy thông tin hợp đồng lao động" });
             }
 
-            // Handle image upload
             if (image != null)
             {
-                // Delete old image if it exists
                 if (!string.IsNullOrEmpty(existingEmployeeCL.Img))
                 {
                     var oldImagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", existingEmployeeCL.Img.TrimStart('/'));
@@ -253,17 +271,18 @@ public class EmployeeCLController : ControllerBase
                 {
                     await image.CopyToAsync(stream);
                 }
-                employeeCL.Img = $"/Img/EmployeeCL/{randomFileName}";
-                _logger.LogInformation("Image uploaded successfully: {FilePath}", employeeCL.Img);
-            }
-            else
-            {
-                // Keep existing image path if no new image is provided
-                employeeCL.Img = existingEmployeeCL.Img;
+                existingEmployeeCL.Img = $"/Img/EmployeeCL/{randomFileName}";
+                _logger.LogInformation("Image uploaded successfully: {FilePath}", existingEmployeeCL.Img);
             }
 
-            // Update Employee_CL properties
-            _context.Entry(existingEmployeeCL).CurrentValues.SetValues(employeeCL);
+            existingEmployeeCL.Eid = employeeCL.Eid;
+            existingEmployeeCL.EmployeeUser = employeeCL.EmployeeUser;
+            existingEmployeeCL.StartDate = employeeCL.StartDate;
+            existingEmployeeCL.EndDate = employeeCL.EndDate;
+            existingEmployeeCL.ExpectedEndDate = employeeCL.ExpectedEndDate;
+            existingEmployeeCL.Status = employeeCL.Status;
+            existingEmployeeCL.Type = employeeCL.Type;
+            existingEmployeeCL.SignDate = employeeCL.SignDate;
 
             await _context.SaveChangesAsync();
             await transaction.CommitAsync();
@@ -299,7 +318,6 @@ public class EmployeeCLController : ControllerBase
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // Delete associated image file
             if (!string.IsNullOrEmpty(employeeCL.Img))
             {
                 var imagePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", employeeCL.Img.TrimStart('/'));

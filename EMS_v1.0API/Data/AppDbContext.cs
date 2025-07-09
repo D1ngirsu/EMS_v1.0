@@ -92,6 +92,10 @@ public class AppDbContext : DbContext
             .ToTable(t => t.HasCheckConstraint("CK_Employee_CL_Status",
                 "[Status] IN (N'Hiệu lực', N'Không Hiệu lực')"));
 
+        modelBuilder.Entity<Employee_CL>()
+            .ToTable(t => t.HasCheckConstraint("CK_Employee_CL_Type",
+                "[Type] IN (N'Thử việc', N'Có thời hạn', N'Vô thời hạn')"));
+
         // Relationships
         modelBuilder.Entity<User>()
             .HasOne(u => u.Employee)
@@ -183,7 +187,7 @@ public class AppDbContext : DbContext
             new Position { PositionId = 7, PositionName = "Cán bộ bảo hiểm" }
         );
 
-        // Seed data - Sample Employees
+
         modelBuilder.Entity<Employee>().HasData(
             new Employee
             {
