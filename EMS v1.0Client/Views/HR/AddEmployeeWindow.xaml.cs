@@ -154,7 +154,7 @@ namespace EMS_v1._0Client.Views.HR
                     {
                         Eid = eid,
                         StartDate = StartDatePicker.SelectedDate.Value,
-                        EndDate = DateTime.Now.AddYears(100), // Default end date, will be overridden by ExpectedEndDate logic
+                        EndDate = null , // Default end date, will be overridden by ExpectedEndDate logic
                         ExpectedEndDate = contractType == "Vô thời hạn" ? null : EndDatePicker.SelectedDate,
                         Status = "Hiệu lực", // Always set to "Hiệu lực" for new contracts
                         Type = contractType,

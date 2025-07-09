@@ -94,7 +94,7 @@ namespace EMS_v1._0Client.Views.HR
                 }
                 else
                 {
-                    //MessageBox.Show(response.Message, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(response.Message, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
@@ -276,7 +276,7 @@ namespace EMS_v1._0Client.Views.HR
                 else
                 {
                     ContractsDataGrid.ItemsSource = null;
-                    //MessageBox.Show(response.Message, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(response.Message, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
@@ -300,7 +300,7 @@ namespace EMS_v1._0Client.Views.HR
                 }
                 else
                 {
-                    //MessageBox.Show(response.Message, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show(response.Message, "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
             catch (Exception ex)
