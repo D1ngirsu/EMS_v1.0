@@ -91,8 +91,8 @@
                     <TextBlock Grid.Row="9" Grid.Column="1" x:Name="ExperienceTextBlock" Margin="0,0,0,5"/>
                     <TextBlock Grid.Row="10" Grid.Column="0" Text="Số tài khoản ngân hàng:" FontWeight="Bold" Margin="0,0,10,5"/>
                     <TextBlock Grid.Row="10" Grid.Column="1" x:Name="BankNumberTextBlock" Margin="0,0,0,5"/>
-                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Ngân hàng:" FontWeight="Bold" Margin="0,17,10,-12"/>
-                    <TextBlock Grid.Row="10" Grid.Column="1" x:Name="BankTextBlock" Margin="0,17,0,-12"/>
+                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Ngân hàng:" FontWeight="Bold" Margin="0,24,10,-19"/>
+                    <TextBlock Grid.Row="10" Grid.Column="1" x:Name="BankTextBlock" Margin="0,24,0,-19"/>
                 </Grid>
             </TabItem>
 
@@ -197,22 +197,36 @@
 
             <!-- Tab 6: Labor Contracts -->
             <TabItem Header="Hợp đồng lao động">
-                <DataGrid x:Name="ContractsDataGrid" AutoGenerateColumns="False" IsReadOnly="True" Margin="3,0,5,0" CanUserAddRows="False" Height="398">
-                    <DataGrid.Columns>
-                        <DataGridTextColumn Header="Mã hợp đồng" Binding="{Binding Cid}" Width="100"/>
-                        <DataGridTextColumn Header="Ngày bắt đầu" Binding="{Binding StartDate, StringFormat=d/M/yyyy}" Width="100"/>
-                        <DataGridTextColumn Header="Ngày kết thúc" Binding="{Binding ExpectedEndDate, StringFormat=d/M/yyyy}" Width="100"/>
-                        <DataGridTextColumn Header="Loại hợp đồng" Binding="{Binding Type}" Width="150"/>
-                        <DataGridTextColumn Header="Trạng thái" Binding="{Binding Status}" Width="*"/>
-                        <DataGridTemplateColumn Header="Ảnh" Width="60">
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
-                                    <Image Source="{Binding Img}" Style="{StaticResource ImageStyle}" MouseLeftButtonUp="ContractImage_Click"/>
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                    </DataGrid.Columns>
-                </DataGrid>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <!-- DataGrid -->
+                        <RowDefinition Height="Auto"/>
+                        <!-- Buttons -->
+                    </Grid.RowDefinitions>
+                    <DataGrid x:Name="ContractsDataGrid" AutoGenerateColumns="False" IsReadOnly="True" Margin="3,0,5,0" CanUserAddRows="False" Height="398">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="Mã hợp đồng" Binding="{Binding Cid}" Width="100"/>
+                            <DataGridTextColumn Header="Ngày bắt đầu" Binding="{Binding StartDate, StringFormat=d/M/yyyy}" Width="100"/>
+                            <DataGridTextColumn Header="Ngày kết thúc" Binding="{Binding ExpectedEndDate, StringFormat=d/M/yyyy}" Width="100"/>
+                            <DataGridTextColumn Header="Ngày kết thúc (Thực tế)" Binding="{Binding EndDate, StringFormat=d/M/yyyy}" Width="150"/>
+                            <DataGridTextColumn Header="Ngày ký" Binding="{Binding SignDate, StringFormat=d/M/yyyy}" Width="100"/>
+                            <DataGridTextColumn Header="Loại hợp đồng" Binding="{Binding Type}" Width="150"/>
+                            <DataGridTextColumn Header="Trạng thái" Binding="{Binding Status}" Width="*"/>
+                            <DataGridTemplateColumn Header="Ảnh" Width="60">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <Image Source="{Binding Img}" Style="{StaticResource ImageStyle}" MouseLeftButtonUp="ContractImage_Click"/>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,10,5,0">
+                        <Button x:Name="TerminateContractButton" Content="Chấm dứt hợp đồng" Style="{StaticResource GridButtonStyle}" Click="TerminateContractButton_Click"/>
+                        <Button x:Name="AddNewContractButton" Content="Thêm hợp đồng mới" Style="{StaticResource GridButtonStyle}" Click="AddNewContractButton_Click"/>
+                    </StackPanel>
+                </Grid>
             </TabItem>
 
             <!-- Tab 7: Todolist -->

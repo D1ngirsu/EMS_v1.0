@@ -135,8 +135,8 @@ public class AppDbContext : DbContext
 
         modelBuilder.Entity<Employee_CL>()
             .HasOne(e => e.Employee)
-            .WithOne(e => e.EmployeeCL)
-            .HasForeignKey<Employee_CL>(e => e.Eid)
+            .WithMany(e => e.EmployeeCLs)
+            .HasForeignKey(e => e.Eid)
             .IsRequired(false);
 
         modelBuilder.Entity<Employee_Salary>()

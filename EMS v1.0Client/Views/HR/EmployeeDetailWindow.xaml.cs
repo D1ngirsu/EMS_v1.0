@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows;
@@ -272,6 +273,7 @@ namespace EMS_v1._0Client.Views.HR
                         }
                     }
                     ContractsDataGrid.ItemsSource = response.Data;
+                    UpdateAddNewContractButtonState(response.Data);
                 }
                 else
                 {
@@ -284,6 +286,12 @@ namespace EMS_v1._0Client.Views.HR
                 Debug.WriteLine($"Error loading contracts: {ex.Message}");
                 MessageBox.Show($"Lỗi khi tải hợp đồng lao động: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void UpdateAddNewContractButtonState(System.Collections.Generic.List<EmployeeCLDto> contracts)
+        {
+            bool hasActiveContract = contracts.Any(c => c.Status == "Hiệu lực");
+            AddNewContractButton.IsEnabled = !hasActiveContract;
         }
 
         private async void LoadTodolist()
@@ -323,6 +331,54 @@ namespace EMS_v1._0Client.Views.HR
             TodoPreviousPageButton.IsEnabled = _todoCurrentPage > 1;
             TodoNextPageButton.IsEnabled = _todoCurrentPage < _todoTotalPages;
             TodoLastPageButton.IsEnabled = _todoCurrentPage < _todoTotalPages;
+        }
+
+        private async void TerminateContractButton_Click(object sender, RoutedEventArgs e)
+        {
+            if (ContractsDataGrid.SelectedItem == null)
+            {
+                MessageBox.Show("Vui lòng chọn một hợp đồng để chấm dứt.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var selectedContract = ContractsDataGrid.SelectedItem as EmployeeCLDto;
+            if (selectedContract.Status != "Hiệu lực")
+            {
+                MessageBox.Show("Hợp đồng đã chọn không ở trạng thái 'Hiệu lực', không thể chấm dứt.", "Thông báo", MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var result = MessageBox.Show("Bạn có chắc chắn muốn chấm dứt hợp đồng này?", "Xác nhận chấm dứt", MessageBoxButton.YesNo, MessageBoxImage.Question);
+            if (result == MessageBoxResult.Yes)
+            {
+                try
+                {
+                    selectedContract.Status = "Không Hiệu lực";
+                    selectedContract.EndDate = DateTime.Now;
+
+                    var response = await _clService.UpdateAsync(selectedContract.Cid, selectedContract);
+                    if (response.Success)
+                    {
+                        MessageBox.Show("Hợp đồng đã được chấm dứt thành công.", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+                        LoadContracts(); // Refresh the contracts list
+                    }
+                    else
+                    {
+                        MessageBox.Show($"Lỗi khi chấm dứt hợp đồng: {response.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Lỗi khi chấm dứt hợp đồng: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void AddNewContractButton_Click(object sender, RoutedEventArgs e)
+        {
+            var addContractWindow = new AddContractWindow(_httpClientFactory, _eid);
+            addContractWindow.ShowDialog();
+            LoadContracts(); // Refresh contracts after adding a new one
         }
 
         private void AppFirstPageButton_Click(object sender, RoutedEventArgs e)
