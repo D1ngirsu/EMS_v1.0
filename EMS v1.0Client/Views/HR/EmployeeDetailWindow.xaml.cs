@@ -1,8 +1,10 @@
-﻿using System;
+﻿
+using System;
 using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -132,6 +134,42 @@ namespace EMS_v1._0Client.Views.HR
                     string.IsNullOrWhiteSpace(BankTextBox.Text))
                 {
                     MessageBox.Show("Vui lòng điền đầy đủ thông tin bắt buộc (Họ tên, Ngày sinh, Phòng ban, Chức vụ, Email, Số điện thoại, Giới tính, Số tài khoản ngân hàng, Ngân hàng).", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Validate Date of Birth (must be at least 18 years old)
+                if (DoBDatePicker.SelectedDate.HasValue)
+                {
+                    var age = DateTime.Now.Year - DoBDatePicker.SelectedDate.Value.Year;
+                    if (DoBDatePicker.SelectedDate.Value > DateTime.Now.AddYears(-age)) age--;
+                    if (age < 18)
+                    {
+                        MessageBox.Show("Nhân viên phải từ 18 tuổi trở lên.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                }
+
+                // Validate Email format
+                string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+                if (!Regex.IsMatch(EmailTextBox.Text, emailPattern))
+                {
+                    MessageBox.Show("Email không đúng định dạng (ví dụ: example@example.com).", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Validate Phone number format
+                string phonePattern = @"^\d{10}$";
+                if (!Regex.IsMatch(PhoneTextBox.Text, phonePattern))
+                {
+                    MessageBox.Show("Số điện thoại phải có đúng 10 chữ số.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Check for duplicate Email and Phone
+                var uniqueCheckResponse = await _employeeService.CheckEmailAndPhoneUniqueAsync(EmailTextBox.Text, PhoneTextBox.Text);
+                if (!uniqueCheckResponse)
+                {
+                    MessageBox.Show("Email hoặc số điện thoại đã tồn tại trong cơ sở dữ liệu.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 

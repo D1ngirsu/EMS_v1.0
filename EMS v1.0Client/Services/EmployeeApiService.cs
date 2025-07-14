@@ -22,6 +22,25 @@ public class EmployeeApiService : IDisposable
         _client.BaseAddress = new Uri(baseUrl);
     }
 
+    public async Task<bool> CheckEmailAndPhoneUniqueAsync(string email, string phone)
+    {
+        try
+        {
+            var response = await _client.GetAsync($"api/employee/check-unique?email={Uri.EscapeDataString(email)}&phone={Uri.EscapeDataString(phone)}");
+            var responseJson = await response.Content.ReadAsStringAsync();
+            var result = JsonSerializer.Deserialize<GenericResponse>(responseJson, new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            });
+            return result.Success;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in CheckEmailAndPhoneUniqueAsync: {ex.Message}");
+            return false;
+        }
+    }
+
     public async Task<EmployeeResponse> CreateEmployeeAsync(Employee employee, byte[] imageData = null, string imageFileName = null)
     {
         using var content = new MultipartFormDataContent();

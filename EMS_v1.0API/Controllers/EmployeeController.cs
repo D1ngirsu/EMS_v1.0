@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -44,6 +45,24 @@ public class EmployeeController : ControllerBase
         return true;
     }
 
+    [HttpGet("check-unique")]
+    public async Task<IActionResult> CheckUnique([FromQuery] string email, [FromQuery] string phone)
+    {
+        var emailExists = await _context.Employees.AnyAsync(e => e.Email == email);
+        var phoneExists = await _context.Employees.AnyAsync(e => e.Phone == phone);
+
+        if (emailExists || phoneExists)
+        {
+            return Ok(new
+            {
+                Success = false,
+                Message = (emailExists ? "Email" : "Số điện thoại") + " đã tồn tại trong cơ sở dữ liệu."
+            });
+        }
+
+        return Ok(new { Success = true });
+    }
+
     [HttpPost]
     [SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
     public async Task<IActionResult> CreateEmployee([FromForm] Employee employee, IFormFile? image)
@@ -69,6 +88,19 @@ public class EmployeeController : ControllerBase
             _logger.LogWarning("Invalid image format or size. File: {FileName}, Size: {FileSize}",
                 image.FileName, image.Length);
             return BadRequest(new { Success = false, Message = "Ảnh không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
+        }
+
+        // Validate Email and Phone uniqueness
+        var emailExists = await _context.Employees.AnyAsync(e => e.Email == employee.Email);
+        var phoneExists = await _context.Employees.AnyAsync(e => e.Phone == employee.Phone);
+
+        if (emailExists || phoneExists)
+        {
+            return BadRequest(new
+            {
+                Success = false,
+                Message = (emailExists ? "Email" : "Số điện thoại") + " đã tồn tại trong cơ sở dữ liệu."
+            });
         }
 
         using var transaction = await _context.Database.BeginTransactionAsync();
@@ -307,16 +339,28 @@ public class EmployeeController : ControllerBase
             return BadRequest(new { Success = false, Message = "Ảnh không hợp lệ. Chỉ chấp nhận định dạng .jpg, .jpeg, .png và kích thước tối đa 5MB." });
         }
 
+        // Validate Email and Phone uniqueness
+        var existingEmployee = await _context.Employees.FirstOrDefaultAsync(e => e.Eid == eid);
+        if (existingEmployee == null)
+        {
+            return NotFound(new { Success = false, Message = "Không tìm thấy nhân viên" });
+        }
+
+        var emailExists = await _context.Employees.AnyAsync(e => e.Email == employee.Email && e.Eid != eid);
+        var phoneExists = await _context.Employees.AnyAsync(e => e.Phone == employee.Phone && e.Eid != eid);
+
+        if (emailExists || phoneExists)
+        {
+            return BadRequest(new
+            {
+                Success = false,
+                Message = (emailExists ? "Email" : "Số điện thoại") + " đã tồn tại trong cơ sở dữ liệu."
+            });
+        }
+
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // Fetch existing employee
-            var existingEmployee = await _context.Employees.FindAsync(eid);
-            if (existingEmployee == null)
-            {
-                return NotFound(new { Success = false, Message = "Không tìm thấy nhân viên" });
-            }
-
             // Handle image upload
             if (image != null)
             {

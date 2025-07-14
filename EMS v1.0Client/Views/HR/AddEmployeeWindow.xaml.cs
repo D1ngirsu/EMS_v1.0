@@ -1,9 +1,11 @@
-﻿using System;
+﻿
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -43,7 +45,6 @@ namespace EMS_v1._0Client.Views.HR
             RelativesDataGrid.ItemsSource = _relatives;
             // Set default value for SignDatePicker
             SignDatePicker.SelectedDate = DateTime.Now;
-
         }
 
         private async void LoadDepartmentsAndPositions()
@@ -113,6 +114,50 @@ namespace EMS_v1._0Client.Views.HR
                     return;
                 }
 
+                // Validate Date of Birth (must be at least 18 years old)
+                if (DoBDatePicker.SelectedDate.HasValue)
+                {
+                    var age = DateTime.Now.Year - DoBDatePicker.SelectedDate.Value.Year;
+                    if (DoBDatePicker.SelectedDate.Value > DateTime.Now.AddYears(-age)) age--;
+                    if (age < 18)
+                    {
+                        MessageBox.Show("Nhân viên phải từ 18 tuổi trở lên.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                }
+
+                // Validate Email format
+                string emailPattern = @"^[^@\s]+@[^@\s]+\.[^@\s]+$";
+                if (!Regex.IsMatch(EmailTextBox.Text, emailPattern))
+                {
+                    MessageBox.Show("Email không đúng định dạng (ví dụ: example@example.com).", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Validate Phone number format
+                string phonePattern = @"^\d{10}$";
+                if (!Regex.IsMatch(PhoneTextBox.Text, phonePattern))
+                {
+                    MessageBox.Show("Số điện thoại phải có đúng 10 chữ số.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                // Check for duplicate Email and Phone in the database
+                var employeesResponse = await _employeeService.GetEmployeesAsync(name: null, eid: null, unitId: null);
+                if (employeesResponse.Success && employeesResponse.Data != null)
+                {
+                    if (employeesResponse.Data.Any(emp => emp.Email == EmailTextBox.Text))
+                    {
+                        MessageBox.Show("Email đã tồn tại trong cơ sở dữ liệu.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                    if (employeesResponse.Data.Any(emp => emp.Phone == PhoneTextBox.Text))
+                    {
+                        MessageBox.Show("Số điện thoại đã tồn tại trong cơ sở dữ liệu.", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        return;
+                    }
+                }
+
                 // Create Employee
                 var employee = new Employee
                 {
@@ -154,7 +199,7 @@ namespace EMS_v1._0Client.Views.HR
                     {
                         Eid = eid,
                         StartDate = StartDatePicker.SelectedDate.Value,
-                        EndDate = null , // Default end date, will be overridden by ExpectedEndDate logic
+                        EndDate = null, // Default end date, will be overridden by ExpectedEndDate logic
                         ExpectedEndDate = contractType == "Vô thời hạn" ? null : EndDatePicker.SelectedDate,
                         Status = "Hiệu lực", // Always set to "Hiệu lực" for new contracts
                         Type = contractType,
@@ -199,7 +244,6 @@ namespace EMS_v1._0Client.Views.HR
                         return;
                     }
                 }
-
 
                 // Create Academic Skills - Validate required fields
                 if (!string.IsNullOrWhiteSpace(AcademicRankTextBox.Text) || !string.IsNullOrWhiteSpace(DegreeTextBox.Text) || !string.IsNullOrWhiteSpace(ASIssuePlaceTextBox.Text))
@@ -349,7 +393,6 @@ namespace EMS_v1._0Client.Views.HR
 
             var relative = new EmployeeRelativesDto
             {
-                
                 RName = RelativeNameTextBox.Text,
                 RRelativity = RelativeRelationTextBox.Text,
                 RContact = RelativeContactTextBox.Text,
@@ -365,6 +408,7 @@ namespace EMS_v1._0Client.Views.HR
             RelativeRelationTextBox.Text = string.Empty;
             RelativeContactTextBox.Text = string.Empty;
         }
+
         private void DeleteRelativeButton_Click(object sender, RoutedEventArgs e)
         {
             // Kiểm tra xem có hàng nào được chọn không
