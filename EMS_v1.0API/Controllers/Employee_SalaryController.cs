@@ -1,6 +1,7 @@
 ﻿// Employee_Salary Controller
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 [ApiController]
 [Route("api/employee-salary")]
@@ -16,14 +17,65 @@ public class EmployeeSalaryController : ControllerBase
 
     [HttpGet]
     [SessionAuthorize(RequiredRole = new[] { "PayrollOfficer" })]
-    public async Task<IActionResult> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? searchName = null,
+        [FromQuery] string? unitName = null,
+        [FromQuery] string? sortOrder = null) // "asc", "desc", "no-salary"
     {
-        var query = _context.Employee_Salaries
-            .Include(e => e.Employee)
-            .AsQueryable();
+        var query = from e in _context.Employees
+                    join es in _context.Employee_Salaries
+                        on e.Eid equals es.Eid into salaryGroup
+                    from es in salaryGroup.DefaultIfEmpty()
+                    join p in _context.Positions
+                        on e.PositionId equals p.PositionId
+                    join ou in _context.OrganizationUnits
+                        on e.UnitId equals ou.UnitId
+                    join parentUnit in _context.OrganizationUnits
+                        on ou.ParentId equals parentUnit.UnitId into parentGroup
+                    from parentUnit in parentGroup.DefaultIfEmpty()
+                    select new
+                    {
+                        EmployeeId = e.Eid,
+                        EmployeeName = e.Name,
+                        PositionName = p.PositionName,
+                        // Nếu là nhóm (có ParentId), hiển thị phòng ban cha, nếu là phòng ban thì hiển thị chính nó
+                        UnitName = ou.ParentId != null ? parentUnit.UnitName : ou.UnitName,
+                        Salary = es != null ? es.Salary : (decimal?)null
+                    };
+
+        // Tìm kiếm theo tên nhân viên
+        if (!string.IsNullOrEmpty(searchName))
+        {
+            query = query.Where(e => e.EmployeeName.Contains(searchName));
+        }
+
+        // Tìm kiếm theo phòng ban
+        if (unitName != null)
+        {
+            query = query.Where(e => e.UnitName == unitName);
+        }
+
+        // Sắp xếp
+        switch (sortOrder?.ToLower())
+        {
+            case "asc":
+                query = query.OrderBy(e => e.Salary ?? decimal.MaxValue);
+                break;
+            case "desc":
+                query = query.OrderByDescending(e => e.Salary ?? decimal.MinValue);
+                break;
+            case "no-salary":
+                query = query.OrderBy(e => e.Salary == null ? 0 : 1).ThenBy(e => e.EmployeeName);
+                break;
+            default:
+                query = query.OrderBy(e => e.EmployeeName);
+                break;
+        }
 
         var totalCount = await query.CountAsync();
-        var salaries = await query
+        var employees = await query
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
@@ -31,11 +83,29 @@ public class EmployeeSalaryController : ControllerBase
         return Ok(new
         {
             Success = true,
-            Data = salaries,
+            Data = employees,
             TotalCount = totalCount,
             Page = page,
             PageSize = pageSize,
             TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+        });
+    }
+
+    // Thêm method để lấy danh sách phòng ban cho filter
+    [HttpGet("departments")]
+    [SessionAuthorize(RequiredRole = new[] { "PayrollOfficer" })]
+    public async Task<IActionResult> GetDepartments()
+    {
+        var departments = await _context.OrganizationUnits
+            .Where(ou => ou.UnitType == "PhongBan") // Chỉ lấy phòng ban
+            .Select(ou => ou.UnitName)
+            .OrderBy(name => name)
+            .ToListAsync();
+
+        return Ok(new
+        {
+            Success = true,
+            Data = departments
         });
     }
 
