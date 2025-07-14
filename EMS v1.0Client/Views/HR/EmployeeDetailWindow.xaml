@@ -64,35 +64,41 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock Grid.Row="0" Grid.Column="0" Text="Mã nhân viên:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBlock Grid.Row="0" Grid.Column="1" x:Name="EidTextBlock" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="0" Grid.Column="1" x:Name="EidTextBox" Margin="0,0,0,5" IsReadOnly="True"/>
                     <TextBlock Grid.Row="1" Grid.Column="0" Text="Họ và tên:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBlock Grid.Row="1" Grid.Column="1" x:Name="NameTextBlock" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="1" Grid.Column="1" x:Name="NameTextBox" Margin="0,0,0,5"/>
                     <TextBlock Grid.Row="2" Grid.Column="0" Text="Ngày sinh:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBlock Grid.Row="2" Grid.Column="1" x:Name="DoBTextBlock" Margin="0,0,0,5"/>
+                    <DatePicker Grid.Row="2" Grid.Column="1" x:Name="DoBDatePicker" Margin="0,0,0,5"/>
                     <TextBlock Grid.Row="3" Grid.Column="0" Text="Phòng ban:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBlock Grid.Row="3" Grid.Column="1" x:Name="UnitTextBlock" Margin="0,0,0,5"/>
+                    <ComboBox Grid.Row="3" Grid.Column="1" x:Name="UnitComboBox" Margin="0,0,0,5" DisplayMemberPath="UnitName"/>
                     <TextBlock Grid.Row="4" Grid.Column="0" Text="Chức vụ:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBlock Grid.Row="4" Grid.Column="1" x:Name="PositionTextBlock" Margin="0,0,0,5"/>
+                    <ComboBox Grid.Row="4" Grid.Column="1" x:Name="PositionComboBox" Margin="0,0,0,5" DisplayMemberPath="PositionName"/>
                     <TextBlock Grid.Row="5" Grid.Column="0" Text="Email:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBlock Grid.Row="5" Grid.Column="1" x:Name="EmailTextBlock" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="5" Grid.Column="1" x:Name="EmailTextBox" Margin="0,0,0,5"/>
                     <TextBlock Grid.Row="6" Grid.Column="0" Text="Số điện thoại:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBlock Grid.Row="6" Grid.Column="1" x:Name="PhoneTextBlock" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="6" Grid.Column="1" x:Name="PhoneTextBox" Margin="0,0,0,5"/>
                     <TextBlock Grid.Row="7" Grid.Column="0" Text="Địa chỉ:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBlock Grid.Row="7" Grid.Column="1" x:Name="AddressTextBlock" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="7" Grid.Column="1" x:Name="AddressTextBox" Margin="0,0,0,5"/>
                     <TextBlock Grid.Row="8" Grid.Column="0" Text="Giới tính:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBlock Grid.Row="8" Grid.Column="1" x:Name="GenderTextBlock" Margin="0,0,0,5"/>
+                    <ComboBox Grid.Row="8" Grid.Column="1" x:Name="GenderComboBox" Margin="0,0,0,5">
+                        <ComboBoxItem Content="Nam"/>
+                        <ComboBoxItem Content="Nữ"/>
+                        <ComboBoxItem Content="Khác"/>
+                    </ComboBox>
                     <TextBlock Grid.Row="9" Grid.Column="0" Text="Kinh nghiệm (năm):" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBlock Grid.Row="9" Grid.Column="1" x:Name="ExperienceTextBlock" Margin="0,0,0,5"/>
+                    <TextBox Grid.Row="9" Grid.Column="1" x:Name="ExperienceTextBox" Margin="0,0,0,5"/>
                     <TextBlock Grid.Row="10" Grid.Column="0" Text="Số tài khoản ngân hàng:" FontWeight="Bold" Margin="0,0,10,5"/>
-                    <TextBlock Grid.Row="10" Grid.Column="1" x:Name="BankNumberTextBlock" Margin="0,0,0,5"/>
-                    <TextBlock Grid.Row="10" Grid.Column="0" Text="Ngân hàng:" FontWeight="Bold" Margin="0,24,10,-19"/>
-                    <TextBlock Grid.Row="10" Grid.Column="1" x:Name="BankTextBlock" Margin="0,24,0,-19"/>
+                    <TextBox Grid.Row="10" Grid.Column="1" x:Name="BankNumberTextBox" Margin="0,0,0,5"/>
+                    <TextBlock Grid.Row="11" Grid.Column="0" Text="Ngân hàng:" FontWeight="Bold" Margin="0,0,10,5"/>
+                    <TextBox Grid.Row="11" Grid.Column="1" x:Name="BankTextBox" Margin="0,0,0,5"/>
+                    <Button Grid.Row="11" Grid.Column="1" x:Name="SaveChangesButton" Content="Lưu thay đổi" Style="{StaticResource GridButtonStyle}" Click="SaveChangesButton_Click" HorizontalAlignment="Right" Margin="0,69,47,-59"/>
                 </Grid>
             </TabItem>
 

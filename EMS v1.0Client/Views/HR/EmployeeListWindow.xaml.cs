@@ -285,6 +285,11 @@ namespace EMS_v1._0Client.Views.HR
             var addEmployeeWindow = new AddEmployeeWindow(_httpClientFactory);
             addEmployeeWindow.Show();
         }
+
+        private void RefreshButton_Click(object sender, RoutedEventArgs e)
+        {
+            LoadEmployees();
+        }
     }
 
     // Converter to display parent unit or direct unit based on ParentOrganizationUnit

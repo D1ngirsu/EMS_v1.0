@@ -38,8 +38,10 @@ public class AuthController : ControllerBase
         string userRole = "User";
         if (user.Employee?.Position?.PositionName == "Giám Đốc")
             userRole = "Admin";
-        else if (user.Employee?.Position?.PositionName == "Trưởng Phòng")
-            userRole = "Manager";
+        else if (user.Employee?.Position?.PositionName == "Trưởng Phòng" && user.Employee?.OrganizationUnit?.UnitName == "Phòng Nhân Sự")
+            userRole = "HR_Manager";
+        else if (user.Employee?.Position?.PositionName == "Trưởng Phòng" && user.Employee?.OrganizationUnit?.UnitName == "Phòng Kỹ Thuật")
+            userRole = "Tech_Manager";
         else if (user.Employee?.Position?.PositionName == "Trưởng nhóm")
             userRole = "TeamLeader";
         else if (user.Employee?.Position?.PositionName == "Cán bộ nhân sự")

@@ -75,7 +75,8 @@
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="10">
                     <TextBox x:Name="SearchTextBox" Width="300" Height="30" Margin="0,0,10,0" TextChanged="SearchTextBox_TextChanged" VerticalContentAlignment="Center"/>
                     <Button Content="Tìm kiếm" Style="{StaticResource GridButtonStyle}" Click="SearchButton_Click"/>
-                    <Button Content="Thêm mới nhân viên" Style="{StaticResource GridButtonStyle}" Click="AddEmployeeButton_Click" Margin="180,5,5,5"/>
+                    <Button Content="Làm mới" Style="{StaticResource GridButtonStyle}" Click="RefreshButton_Click" Margin="5,5,5,5"/>
+                    <Button Content="Thêm mới nhân viên" Style="{StaticResource GridButtonStyle}" Click="AddEmployeeButton_Click" Margin="100,5,5,5"/>
                 </StackPanel>
 
                 <!-- Employee DataGrid -->

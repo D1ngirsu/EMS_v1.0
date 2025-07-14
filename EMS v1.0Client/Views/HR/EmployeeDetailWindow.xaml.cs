@@ -20,6 +20,7 @@ namespace EMS_v1._0Client.Views.HR
         private readonly EmployeeRelativesService _relativesService;
         private readonly EmployeeCLService _clService;
         private readonly EmployeeTodolistService _todolistService;
+        private readonly OrganizationApiService _orgService;
         private readonly IHttpClientFactory _httpClientFactory;
         private readonly int _eid;
         private int _appCurrentPage = 1;
@@ -41,6 +42,7 @@ namespace EMS_v1._0Client.Views.HR
             _relativesService = new EmployeeRelativesService("https://localhost:5105/", _httpClientFactory);
             _clService = new EmployeeCLService("https://localhost:5105/", _httpClientFactory);
             _todolistService = new EmployeeTodolistService("https://localhost:5105/", _httpClientFactory);
+            _orgService = new OrganizationApiService("https://localhost:5105/", _httpClientFactory);
             LoadEmployeeDetails();
             LoadApplications();
             LoadAcademicSkills();
@@ -59,18 +61,31 @@ namespace EMS_v1._0Client.Views.HR
                 {
                     var employee = response.Data;
                     EmployeeNameTextBlock.Text = employee.Name;
-                    EidTextBlock.Text = employee.Eid.ToString();
-                    NameTextBlock.Text = employee.Name;
-                    DoBTextBlock.Text = employee.DoB.ToString("d/M/yyyy");
-                    UnitTextBlock.Text = new ParentUnitConverter().Convert(employee, typeof(string), null, CultureInfo.CurrentCulture).ToString();
-                    PositionTextBlock.Text = employee.Position?.PositionName ?? string.Empty;
-                    EmailTextBlock.Text = employee.Email ?? string.Empty;
-                    PhoneTextBlock.Text = employee.Phone ?? string.Empty;
-                    AddressTextBlock.Text = employee.Address ?? string.Empty;
-                    GenderTextBlock.Text = employee.Gender ?? string.Empty;
-                    ExperienceTextBlock.Text = employee.Experience.ToString();
-                    BankNumberTextBlock.Text = employee.BankNumber ?? string.Empty;
-                    BankTextBlock.Text = employee.Bank ?? string.Empty;
+                    EidTextBox.Text = employee.Eid.ToString();
+                    NameTextBox.Text = employee.Name;
+                    DoBDatePicker.SelectedDate = employee.DoB;
+                    EmailTextBox.Text = employee.Email ?? string.Empty;
+                    PhoneTextBox.Text = employee.Phone ?? string.Empty;
+                    AddressTextBox.Text = employee.Address ?? string.Empty;
+                    GenderComboBox.SelectedItem = GenderComboBox.Items.Cast<ComboBoxItem>().FirstOrDefault(i => i.Content.ToString() == (employee.Gender ?? string.Empty));
+                    ExperienceTextBox.Text = employee.Experience.ToString();
+                    BankNumberTextBox.Text = employee.BankNumber ?? string.Empty;
+                    BankTextBox.Text = employee.Bank ?? string.Empty;
+
+                    // Load departments and positions
+                    var deptResponse = await _orgService.GetDepartmentsAsync();
+                    if (deptResponse.Success && deptResponse.Data != null)
+                    {
+                        UnitComboBox.ItemsSource = deptResponse.Data;
+                        UnitComboBox.SelectedItem = deptResponse.Data.FirstOrDefault(u => u.UnitId == employee.OrganizationUnit?.UnitId);
+                    }
+
+                    var posResponse = await _orgService.GetPositionsAsync();
+                    if (posResponse.Success && posResponse.Data != null)
+                    {
+                        PositionComboBox.ItemsSource = posResponse.Data;
+                        PositionComboBox.SelectedItem = posResponse.Data.FirstOrDefault(p => p.PositionId == employee.Position?.PositionId);
+                    }
 
                     if (!string.IsNullOrEmpty(employee.Img))
                     {
@@ -102,6 +117,61 @@ namespace EMS_v1._0Client.Views.HR
             {
                 Debug.WriteLine($"Error loading employee details: {ex.Message}");
                 MessageBox.Show($"Lỗi khi tải thông tin nhân viên: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private async void SaveChangesButton_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                // Validate required fields
+                if (string.IsNullOrWhiteSpace(NameTextBox.Text) || DoBDatePicker.SelectedDate == null ||
+                    UnitComboBox.SelectedItem == null || PositionComboBox.SelectedItem == null ||
+                    string.IsNullOrWhiteSpace(EmailTextBox.Text) || string.IsNullOrWhiteSpace(PhoneTextBox.Text) ||
+                    GenderComboBox.SelectedItem == null || string.IsNullOrWhiteSpace(BankNumberTextBox.Text) ||
+                    string.IsNullOrWhiteSpace(BankTextBox.Text))
+                {
+                    MessageBox.Show("Vui lòng điền đầy đủ thông tin bắt buộc (Họ tên, Ngày sinh, Phòng ban, Chức vụ, Email, Số điện thoại, Giới tính, Số tài khoản ngân hàng, Ngân hàng).", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var employee = new Employee
+                {
+                    Eid = _eid,
+                    Name = NameTextBox.Text,
+                    DoB = DoBDatePicker.SelectedDate.Value,
+                    UnitId = (UnitComboBox.SelectedItem as OrganizationUnitDto).UnitId,
+                    PositionId = (PositionComboBox.SelectedItem as PositionDto).PositionId,
+                    Email = EmailTextBox.Text,
+                    Phone = PhoneTextBox.Text,
+                    Address = AddressTextBox.Text,
+                    Gender = (GenderComboBox.SelectedItem as ComboBoxItem)?.Content.ToString(),
+                    Experience = int.TryParse(ExperienceTextBox.Text, out int exp) ? exp : 0,
+                    BankNumber = BankNumberTextBox.Text,
+                    Bank = BankTextBox.Text,
+                    Source = (await _employeeService.GetEmployeeAsync(_eid)).Data.Source // Preserve existing Source
+                };
+
+                var response = await _employeeService.UpdateEmployeeAsync(_eid, employee);
+                if (response.Success)
+                {
+                    MessageBox.Show("Cập nhật thông tin nhân viên thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+                    LoadEmployeeDetails(); // Refresh the data
+                }
+                else
+                {
+                    string errorMessage = response.Message ?? "Không nhận được dữ liệu từ server.";
+                    if (response.Errors != null)
+                    {
+                        errorMessage += $"\nChi tiết lỗi: {System.Text.Json.JsonSerializer.Serialize(response.Errors)}";
+                    }
+                    MessageBox.Show($"Lỗi khi cập nhật nhân viên: {errorMessage}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error saving employee changes: {ex.Message}");
+                MessageBox.Show($"Lỗi khi lưu thay đổi: {ex.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
