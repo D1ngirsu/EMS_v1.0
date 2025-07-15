@@ -2,7 +2,6 @@
 using Microsoft.EntityFrameworkCore;
 using System.Linq;
 
-// Employee_Insurance Controller
 [ApiController]
 [Route("api/employee-insurance")]
 [SessionAuthorize]
@@ -17,27 +16,63 @@ public class EmployeeInsuranceController : ControllerBase
 
     [HttpGet]
     public async Task<IActionResult> GetInsurances(
-        [FromQuery] string? name = null,
-        [FromQuery] int? eid = null,
-        [FromQuery] int? iid = null,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 10)
+     [FromQuery] string? name = null,
+     [FromQuery] string? unitName = null,
+     [FromQuery] string? sortOrder = null, // "asc", "desc", "no-insurance"
+     [FromQuery] int page = 1,
+     [FromQuery] int pageSize = 10)
     {
-        var query = _context.Employee_Insurances
-            .Include(e => e.Employee)
-            .AsQueryable();
+        var query = from e in _context.Employees
+                    join ei in _context.Employee_Insurances
+                        on e.Eid equals ei.Eid into insuranceGroup
+                    from ei in insuranceGroup.DefaultIfEmpty()
+                    join p in _context.Positions
+                        on e.PositionId equals p.PositionId
+                    join ou in _context.OrganizationUnits
+                        on e.UnitId equals ou.UnitId
+                    join parentUnit in _context.OrganizationUnits
+                        on ou.ParentId equals parentUnit.UnitId into parentGroup
+                    from parentUnit in parentGroup.DefaultIfEmpty()
+                    select new
+                    {
+                        Iid = ei != null ? ei.Iid : (int?)null,
+                        Eid = e.Eid,
+                        EmployeeName = e.Name,
+                        PositionName = p.PositionName,
+                        UnitName = ou.ParentId != null ? parentUnit.UnitName : ou.UnitName,
+                        InsuranceContent = ei != null ? ei.InsuranceContent : null,
+                        FromDate = ei != null ? ei.FromDate : (DateTime?)null,
+                        ToDate = ei != null ? ei.ToDate : (DateTime?)null,
+                        ContributePercent = ei != null ? ei.ContributePercent : (decimal?)null
+                    };
 
-        if (iid.HasValue)
+        // Tìm kiếm theo tên nhân viên
+        if (!string.IsNullOrEmpty(name))
         {
-            query = query.Where(e => e.Iid == iid.Value);
+            query = query.Where(e => e.EmployeeName.Contains(name));
         }
-        else if (eid.HasValue)
+
+        // Lọc theo phòng ban
+        if (!string.IsNullOrEmpty(unitName))
         {
-            query = query.Where(e => e.Eid == eid.Value);
+            query = query.Where(e => e.UnitName == unitName);
         }
-        else if (!string.IsNullOrEmpty(name))
+
+        // Sắp xếp
+        switch (sortOrder?.ToLower())
         {
-            query = query.Where(e => e.Employee != null && e.Employee.Name.Contains(name));
+            case "asc":
+                query = query.OrderBy(e => e.ContributePercent ?? decimal.MaxValue);
+                break;
+            case "desc":
+                query = query.OrderByDescending(e => e.ContributePercent ?? decimal.MinValue);
+                break;
+            case "no-insurance":
+                query = query.OrderBy(e => e.ContributePercent == null ? 0 : 1).ThenBy(e => e.EmployeeName);
+                break;
+            default:
+                query = query.OrderBy(e => e.EmployeeName);
+                break;
         }
 
         var totalCount = await query.CountAsync();
@@ -45,11 +80,6 @@ public class EmployeeInsuranceController : ControllerBase
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync();
-
-        if (employeeInsurances == null || !employeeInsurances.Any())
-        {
-            return NotFound(new { Success = false, Message = "Không tìm thấy thông tin bảo hiểm" });
-        }
 
         return Ok(new
         {

@@ -1,0 +1,36 @@
+﻿<Window x:Class="EMS_v1._0Client.Views.InsuranceStaff.UpdateInsuranceWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Cập nhật bảo hiểm" Height="400" Width="400"
+        WindowStartupLocation="CenterScreen">
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Text="{Binding EmployeeName, StringFormat='Cập nhật bảo hiểm cho: {0}'}" FontWeight="Bold" Margin="0,0,0,10"/>
+        <TextBlock Grid.Row="1" Text="Nội dung bảo hiểm:" Margin="0,0,0,5"/>
+        <TextBox x:Name="InsuranceContentTextBox" Grid.Row="2" Margin="0,0,0,10" Text="{Binding InsuranceContent}"/>
+        <TextBlock Grid.Row="3" Text="Tỷ lệ đóng góp (%):" Margin="0,0,0,5"/>
+        <StackPanel Grid.Row="4" Orientation="Horizontal" Margin="0,0,0,10">
+            <TextBox x:Name="ContributePercentTextBox" Width="300" Text="{Binding ContributePercent, StringFormat={}{0:F1}}"/>
+            <TextBlock Text="%" VerticalAlignment="Center" Margin="5,0,0,0"/>
+        </StackPanel>
+        <TextBlock Grid.Row="5" Text="Từ ngày:" Margin="0,0,0,5"/>
+        <DatePicker x:Name="FromDatePicker" Grid.Row="6" Margin="0,0,0,10" SelectedDate="{Binding FromDate}"/>
+        <TextBlock Grid.Row="7" Text="Đến ngày:" Margin="0,0,0,5"/>
+        <DatePicker x:Name="ToDatePicker" Grid.Row="7" Margin="0,21,0,50" SelectedDate="{Binding ToDate}"/>
+        <StackPanel Grid.Row="9" Orientation="Horizontal" HorizontalAlignment="Right">
+            <Button x:Name="SaveButton" Content="Lưu" Width="80" Margin="0,0,10,0" Click="SaveButton_Click"/>
+            <Button x:Name="CancelButton" Content="Hủy" Width="80" Click="CancelButton_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

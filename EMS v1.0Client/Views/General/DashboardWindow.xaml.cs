@@ -1,6 +1,7 @@
 ﻿using EMS_v1._0Client.Views.Auth;
 using EMS_v1._0Client.Views.HR;
 using EMS_v1._0Client.Views.SalaryStaff;
+using EMS_v1._0Client.Views.InsuranceStaff;
 using System;
 using System.Diagnostics;
 using System.Windows;
@@ -156,7 +157,9 @@ namespace EMS_v1._0Client.Views.General
         private void InsuranceManagementButton_Click(object sender, RoutedEventArgs e)
         {
             // TODO: Implement InsuranceManagementWindow navigation
-            MessageBox.Show("Chuyển đến Quản lý bảo hiểm (Chưa được triển khai)", "Thông báo");
+            var insuranceManagementWindow = new InsuranceManagementWindow(_httpClientFactory);
+            insuranceManagementWindow.Show();
+            Close();
         }
 
         private void TodolistButton_Click(object sender, RoutedEventArgs e)
