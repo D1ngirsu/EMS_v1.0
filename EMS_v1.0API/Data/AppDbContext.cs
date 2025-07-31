@@ -16,6 +16,8 @@ public class AppDbContext : DbContext
     public DbSet<Employee_Todolist> Employee_Todolists { get; set; }
     public DbSet<Employee_Salary> Employee_Salaries { get; set; }
     public DbSet<Employee_Insurance> Employee_Insurances { get; set; }
+    public DbSet<HR_Notification> HR_Notifications { get; set; }
+
 
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
@@ -95,6 +97,9 @@ public class AppDbContext : DbContext
         modelBuilder.Entity<Employee_CL>()
             .ToTable(t => t.HasCheckConstraint("CK_Employee_CL_Type",
                 "[Type] IN (N'Thử việc', N'Có thời hạn', N'Vô thời hạn')"));
+
+        modelBuilder.Entity<HR_Notification>()
+        .ToTable(t => t.HasCheckConstraint("CK_HR_Notification_Content", "[Content] IS NOT NULL AND LEN([Content]) > 0"));
 
         // Relationships
         modelBuilder.Entity<User>()

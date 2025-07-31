@@ -22,6 +22,7 @@ namespace EMS_v1._0Client.Views.HR
         private readonly EmployeeASService _asService;
         private readonly EmployeeRelativesService _relativesService;
         private readonly OrganizationApiService _orgService;
+        private readonly NotificationApiService _notificationService;
         private readonly IHttpClientFactory _httpClientFactory;
         private byte[] _avatarImageData;
         private string _avatarImageFileName;
@@ -41,6 +42,7 @@ namespace EMS_v1._0Client.Views.HR
             _asService = new EmployeeASService("https://localhost:5105/", _httpClientFactory);
             _relativesService = new EmployeeRelativesService("https://localhost:5105/", _httpClientFactory);
             _orgService = new OrganizationApiService("https://localhost:5105/", _httpClientFactory);
+            _notificationService = new NotificationApiService("https://localhost:5105/", _httpClientFactory);
             LoadDepartmentsAndPositions();
             RelativesDataGrid.ItemsSource = _relatives;
             // Set default value for SignDatePicker
@@ -289,6 +291,19 @@ namespace EMS_v1._0Client.Views.HR
                         MessageBox.Show($"Lỗi khi tạo người thân: {relResponse.Errors}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
+
+                // Send notification
+                var department = (UnitComboBox.SelectedItem as OrganizationUnitDto)?.UnitName;
+                var position = (PositionComboBox.SelectedItem as PositionDto)?.PositionName;
+                var notificationContent = $"Nhân viên {NameTextBox.Text}, {position} {department} đã được thêm vào hệ thống";
+                var notificationResponse = await _notificationService.CreateNotificationAsync(notificationContent);
+                if (!notificationResponse.Success)
+                {
+                    MessageBox.Show($"Lỗi khi gửi thông báo: {notificationResponse.Message}", "Lỗi", MessageBoxButton.OK, MessageBoxImage.Warning);
+                }
+
+                MessageBox.Show("Thêm nhân viên thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
+                Close();
 
                 MessageBox.Show("Thêm nhân viên thành công!", "Thành công", MessageBoxButton.OK, MessageBoxImage.Information);
                 Close();
