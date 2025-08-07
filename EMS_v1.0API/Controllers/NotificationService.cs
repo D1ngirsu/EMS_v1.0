@@ -40,7 +40,7 @@ public class NotificationService
         }
     }
 
-    public async Task GetRecentNotificationsAsync()
+    public async Task<GenericResponse> GetRecentNotificationsAsync()
     {
         try
         {
@@ -54,12 +54,34 @@ public class NotificationService
                     .Select(n => new { n.Id, n.Content, n.DateTime })
                     .ToListAsync();
 
+                // Trả về GenericResponse với danh sách thông báo (có thể rỗng)
+                var response = new GenericResponse
+                {
+                    Success = true,
+                    Message = "Lấy danh sách thông báo thành công",
+                    Data = notifications // Danh sách rỗng nếu không có thông báo
+                };
+
+                // Gửi thông báo qua SignalR
                 await _hubContext.Clients.All.SendAsync("ReceiveRecentNotifications", notifications);
+
+                return response;
             }
         }
         catch (Exception ex)
         {
-            throw new Exception("Error getting recent notifications: " + ex.Message);
+            return new GenericResponse
+            {
+                Success = false,
+                Message = "Lỗi khi lấy thông báo: " + ex.Message
+            };
         }
+    }
+
+    public class GenericResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+        public object Data { get; set; }
     }
 }

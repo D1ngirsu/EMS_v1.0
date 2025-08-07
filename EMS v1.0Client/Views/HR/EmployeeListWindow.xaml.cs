@@ -232,6 +232,13 @@ namespace EMS_v1._0Client.Views.HR
             // Already in employee management, no action needed
         }
 
+        private void NotificationsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var notificationWindow = new NotificationWindow(_httpClientFactory);
+            notificationWindow.Show();
+            Close();
+        }
+
         private void SalaryManagementButton_Click(object sender, RoutedEventArgs e)
         {
             MessageBox.Show("Chuyển đến Quản lý lương (Chưa được triển khai)", "Thông báo");

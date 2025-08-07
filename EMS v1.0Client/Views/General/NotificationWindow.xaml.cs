@@ -1,26 +1,33 @@
 ﻿using EMS_v1._0Client.Views.Auth;
 using EMS_v1._0Client.Views.HR;
-using EMS_v1._0Client.Views.InsuranceStaff;
 using EMS_v1._0Client.Views.SalaryStaff;
+using EMS_v1._0Client.Views.InsuranceStaff;
 using System;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Text.Json;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 
 namespace EMS_v1._0Client.Views.General
 {
-    public partial class MyProfileWindow : Window
+    public partial class NotificationWindow : Window
     {
         private readonly AuthApiService _authService;
+        private readonly NotificationApiService _notificationService;
         private readonly IHttpClientFactory _httpClientFactory;
         private UserDto _currentUser;
+        private ObservableCollection<NotificationDto> _notifications;
 
-        public MyProfileWindow(IHttpClientFactory httpClientFactory)
+        public NotificationWindow(IHttpClientFactory httpClientFactory)
         {
             InitializeComponent();
             _httpClientFactory = httpClientFactory ?? throw new ArgumentNullException(nameof(httpClientFactory));
             _authService = new AuthApiService("https://localhost:5105/", _httpClientFactory);
+            _notificationService = new NotificationApiService("https://localhost:5105/", _httpClientFactory);
+            _notifications = new ObservableCollection<NotificationDto>();
+            NotificationsListView.ItemsSource = _notifications;
             LoadUserInfo();
         }
 
@@ -48,46 +55,15 @@ namespace EMS_v1._0Client.Views.General
                 if (_currentUser != null)
                 {
                     Debug.WriteLine($"[LoadUserInfo] Successfully loaded user: {_currentUser.Username}");
-
-                    // Set user info in UI
                     UserNameTextBlock.Text = _currentUser.Employee?.Name ?? _currentUser.Username;
-                    ProfileNameTextBlock.Text = _currentUser.Employee?.Name ?? _currentUser.Username;
-                    UsernameTextBlock.Text = _currentUser.Username ?? "N/A";
-                    EmailTextBlock.Text = _currentUser.Employee?.Email ?? "N/A";
-                    RoleTextBlock.Text = _currentUser.Role ?? "N/A";
+                    Debug.WriteLine($"[LoadUserInfo] Set username to: {UserNameTextBlock.Text}");
 
-                    // Handle organization unit and group
-                    if (_currentUser.Employee?.OrganizationUnit != null)
-                    {
-                        Debug.WriteLine($"[LoadUserInfo] UnitType: {_currentUser.Employee.OrganizationUnit.UnitType}");
-                        Debug.WriteLine($"[LoadUserInfo] ParentOrganizationUnit: {_currentUser.Employee.ParentOrganizationUnit?.UnitName ?? "null"}");
-                        if (_currentUser.Employee.OrganizationUnit.UnitType.Equals("Nhom", StringComparison.OrdinalIgnoreCase) &&
-                            _currentUser.Employee.ParentOrganizationUnit != null)
-                        {
-                            UnitTextBlock.Text = _currentUser.Employee.ParentOrganizationUnit.UnitName ?? "N/A";
-                            GroupTextBlock.Text = _currentUser.Employee.OrganizationUnit.UnitName ?? "N/A";
-                        }
-                        else
-                        {
-                            UnitTextBlock.Text = _currentUser.Employee.OrganizationUnit.UnitName ?? "N/A";
-                            GroupTextBlock.Text = "N/A";
-                        }
-                    }
-
-                    PositionTextBlock.Text = _currentUser.Employee?.Position?.PositionName ?? "N/A";
-                    DateOfBirthTextBlock.Text = _currentUser.Employee?.DoB.ToString("dd/MM/yyyy") ?? "N/A";
-                    GenderTextBlock.Text = _currentUser.Employee?.Gender ?? "N/A";
-                    AddressTextBlock.Text = _currentUser.Employee?.Address ?? "N/A";
-
-                    // Load avatar if available
                     if (!string.IsNullOrEmpty(_currentUser.Employee?.Img))
                     {
                         try
                         {
                             Debug.WriteLine($"[LoadUserInfo] Loading avatar: {_currentUser.Employee.Img}");
-                            var avatarSource = new BitmapImage(new Uri(_currentUser.Employee.Img, UriKind.RelativeOrAbsolute));
-                            UserAvatar.Source = avatarSource;
-                            ProfileAvatar.Source = avatarSource;
+                            UserAvatar.Source = new BitmapImage(new Uri(_currentUser.Employee.Img, UriKind.RelativeOrAbsolute));
                         }
                         catch (Exception avatarEx)
                         {
@@ -95,9 +71,11 @@ namespace EMS_v1._0Client.Views.General
                         }
                     }
 
-                    // Show role-specific buttons
                     Debug.WriteLine($"[LoadUserInfo] User role: {_currentUser.Role}");
                     ShowRoleSpecificButtons(_currentUser.Role);
+
+                    // Load notifications only after user is authenticated
+                    LoadNotifications();
                 }
                 else
                 {
@@ -110,9 +88,50 @@ namespace EMS_v1._0Client.Views.General
             catch (Exception ex)
             {
                 Debug.WriteLine($"[LoadUserInfo] Exception: {ex.Message}");
+                Debug.WriteLine($"[LoadUserInfo] StackTrace: {ex.StackTrace}");
                 MessageBox.Show($"Lỗi khi tải thông tin người dùng: {ex.Message}", "Lỗi",
                     MessageBoxButton.OK, MessageBoxImage.Error);
                 ReturnToLogin();
+            }
+        }
+
+        private async void LoadNotifications()
+        {
+            try
+            {
+                var response = await _notificationService.GetRecentNotificationsAsync();
+                if (response.Success)
+                {
+                    var notifications = response.Data != null
+                        ? JsonSerializer.Deserialize<List<NotificationDto>>(JsonSerializer.Serialize(response.Data), new JsonSerializerOptions
+                        {
+                            PropertyNameCaseInsensitive = true
+                        })
+                        : new List<NotificationDto>();
+
+                    _notifications.Clear();
+                    foreach (var notification in notifications)
+                    {
+                        _notifications.Add(notification);
+                    }
+
+                    if (!notifications.Any())
+                    {
+                        MessageBox.Show("Không có thông báo nào để hiển thị.", "Thông báo",
+                            MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
+                }
+                else
+                {
+                    MessageBox.Show($"Lỗi khi tải thông báo: {response.Message}", "Lỗi",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[LoadNotifications] Exception: {ex.Message}");
+                MessageBox.Show($"Lỗi khi tải thông báo: {ex.Message}", "Lỗi",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
@@ -152,23 +171,16 @@ namespace EMS_v1._0Client.Views.General
             Close();
         }
 
-        private void ChangePasswordButton_Click(object sender, RoutedEventArgs e)
+        private void ProfileButton_Click(object sender, RoutedEventArgs e)
         {
-            var changePasswordWindow = new ChangePasswordWindow(_httpClientFactory);
-            changePasswordWindow.Show();
+            var profileWindow = new MyProfileWindow(_httpClientFactory);
+            profileWindow.Show();
             Close();
-        }
-
-        private void TodolistButton_Click(object sender, RoutedEventArgs e)
-        {
-            MessageBox.Show("Chuyển đến Todolist của tôi (Chưa được triển khai)", "Thông báo");
         }
 
         private void NotificationsButton_Click(object sender, RoutedEventArgs e)
         {
-            var notificationWindow = new NotificationWindow(_httpClientFactory);
-            notificationWindow.Show();
-            Close();
+            // Already in NotificationWindow, no action needed
         }
 
         private void EmployeeManagementButton_Click(object sender, RoutedEventArgs e)
@@ -190,6 +202,11 @@ namespace EMS_v1._0Client.Views.General
             var insuranceManagementWindow = new InsuranceManagementWindow(_httpClientFactory);
             insuranceManagementWindow.Show();
             Close();
+        }
+
+        private void TodolistButton_Click(object sender, RoutedEventArgs e)
+        {
+            MessageBox.Show("Chuyển đến Todolist của tôi (Chưa được triển khai)", "Thông báo");
         }
 
         private async void LogoutButton_Click(object sender, RoutedEventArgs e)
@@ -218,6 +235,14 @@ namespace EMS_v1._0Client.Views.General
         {
             base.OnClosed(e);
             _httpClientFactory?.Dispose();
+            _notificationService?.Dispose();
         }
+    }
+
+    public class NotificationDto
+    {
+        public int Id { get; set; }
+        public string Content { get; set; }
+        public DateTime DateTime { get; set; }
     }
 }

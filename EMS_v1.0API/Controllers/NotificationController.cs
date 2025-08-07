@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 
 [ApiController]
 [Route("api/[controller]")]
-[SessionAuthorize(RequiredRole = new[] { "Admin", "HR" })]
+[SessionAuthorize(RequiredRole = new[] { "Admin", "HR" , "PayrollOfficer" , "InsuranceOfficer" })]
 public class NotificationController : ControllerBase
 {
     private readonly NotificationService _notificationService;
@@ -42,8 +42,8 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            await _notificationService.GetRecentNotificationsAsync();
-            return Ok(new { Success = true, Message = "Lấy danh sách thông báo gần đây thành công" });
+            var response = await _notificationService.GetRecentNotificationsAsync();
+            return Ok(response); // Return the full GenericResponse
         }
         catch (Exception ex)
         {

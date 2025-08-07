@@ -30,7 +30,6 @@ namespace EMS_v1._0Client.Views.General
             {
                 Debug.WriteLine("[LoadUserInfo] Starting to load user info...");
 
-                // Check if authenticated
                 bool isAuthenticated = await _authService.IsAuthenticatedAsync();
                 Debug.WriteLine($"[LoadUserInfo] IsAuthenticated result: {isAuthenticated}");
 
@@ -54,7 +53,6 @@ namespace EMS_v1._0Client.Views.General
                     UserNameTextBlock.Text = _currentUser.Employee?.Name ?? _currentUser.Username;
                     Debug.WriteLine($"[LoadUserInfo] Set username to: {UserNameTextBlock.Text}");
 
-                    // Load avatar if available
                     if (!string.IsNullOrEmpty(_currentUser.Employee?.Img))
                     {
                         try
@@ -65,11 +63,9 @@ namespace EMS_v1._0Client.Views.General
                         catch (Exception avatarEx)
                         {
                             Debug.WriteLine($"[LoadUserInfo] Avatar load failed: {avatarEx.Message}");
-                            // Avatar load failed, use default
                         }
                     }
 
-                    // Show role-specific buttons
                     Debug.WriteLine($"[LoadUserInfo] User role: {_currentUser.Role}");
                     ShowRoleSpecificButtons(_currentUser.Role);
                 }
@@ -98,7 +94,6 @@ namespace EMS_v1._0Client.Views.General
         {
             Debug.WriteLine($"[ShowRoleSpecificButtons] Processing role: {role}");
 
-            // Hide all role-specific buttons first
             EmployeeManagementButton.Visibility = Visibility.Collapsed;
             SalaryManagementButton.Visibility = Visibility.Collapsed;
             InsuranceManagementButton.Visibility = Visibility.Collapsed;
@@ -133,15 +128,20 @@ namespace EMS_v1._0Client.Views.General
 
         private void ProfileButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Implement Profile Window navigation
             var profileWindow = new MyProfileWindow(_httpClientFactory);
             profileWindow.Show();
             Close();
         }
 
+        private void NotificationsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var notificationWindow = new NotificationWindow(_httpClientFactory);
+            notificationWindow.Show();
+            Close();
+        }
+
         private void EmployeeManagementButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Implement EmployeeManagementWindow navigation
             var employeeListWindow = new EmployeeListWindow(_httpClientFactory);
             employeeListWindow.Show();
             Close();
@@ -156,7 +156,6 @@ namespace EMS_v1._0Client.Views.General
 
         private void InsuranceManagementButton_Click(object sender, RoutedEventArgs e)
         {
-            // TODO: Implement InsuranceManagementWindow navigation
             var insuranceManagementWindow = new InsuranceManagementWindow(_httpClientFactory);
             insuranceManagementWindow.Show();
             Close();
@@ -192,7 +191,6 @@ namespace EMS_v1._0Client.Views.General
         protected override void OnClosed(EventArgs e)
         {
             base.OnClosed(e);
-            // Dispose the HttpClientFactory to clean up resources
             _httpClientFactory?.Dispose();
         }
     }

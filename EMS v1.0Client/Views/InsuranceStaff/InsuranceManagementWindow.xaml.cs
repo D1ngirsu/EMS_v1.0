@@ -321,6 +321,13 @@ namespace EMS_v1._0Client.Views.InsuranceStaff
             MessageBox.Show("Chuyển đến Todolist của tôi (Chưa được triển khai)", "Thông báo");
         }
 
+        private void NotificationsButton_Click(object sender, RoutedEventArgs e)
+        {
+            var notificationWindow = new NotificationWindow(_httpClientFactory);
+            notificationWindow.Show();
+            Close();
+        }
+
         private async void LogoutButton_Click(object sender, RoutedEventArgs e)
         {
             try

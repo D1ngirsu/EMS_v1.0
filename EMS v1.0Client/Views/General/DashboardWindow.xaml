@@ -41,6 +41,7 @@
                 <!-- Navigation Items -->
                 <Button x:Name="ProfileButton" Content="Profile của tôi" Style="{StaticResource NavButtonStyle}" Click="ProfileButton_Click"/>
                 <Button x:Name="TodolistButton" Content="Todolist của tôi" Style="{StaticResource NavButtonStyle}" Click="TodolistButton_Click"/>
+                <Button x:Name="NotificationsButton" Content="Thông báo" Style="{StaticResource NavButtonStyle}" Click="NotificationsButton_Click"/>
 
                 <!-- Role-based Navigation Buttons -->
                 <Button x:Name="EmployeeManagementButton" Content="Quản lý nhân sự" Style="{StaticResource NavButtonStyle}" Click="EmployeeManagementButton_Click" Visibility="Collapsed"/>
